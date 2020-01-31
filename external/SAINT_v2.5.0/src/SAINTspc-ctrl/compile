@@ -1,0 +1,6 @@
+#! /bin/sh
+gcc -Wall -c *.c *.h
+gcc *.o -lgsl -lgslcblas -lm -o ../../bin/saint-spc-ctrl
+rm -rf *.o
+rm -rf *.gch
+
