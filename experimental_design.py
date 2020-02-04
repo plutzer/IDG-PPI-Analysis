@@ -50,7 +50,7 @@ class ExperimentalDesign:
                 baits.add(experiment.attributes["Bait"])
                 max_replicates = max(max_replicates, int(experiment.attributes["Replicate"]))
 
-        print("Num experiments:", num_experiments)
-        print("Num controls:", num_controls)
         print("Num baits:", len(baits))
-        print("Max bait replicates:", max_replicates)
+        print("Num bait experiments:", num_experiments)
+        print("Max replicates per bait:", max_replicates)
+        print("Num control experiments:", num_controls)

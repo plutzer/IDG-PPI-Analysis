@@ -3,12 +3,13 @@ import sys
 import os
 import argparse
 from experimental_design import ExperimentalDesign
+from protein_groups import ProteinGroups
 
 SAINT_DIR = os.path.dirname(os.path.realpath(__file__)) + "/build/"
 SAINT_v2_INT_DIR = SAINT_DIR + "saint-int-ctrl"
 SAINT_v2_SPC_DIR = SAINT_DIR + "saint-spc-ctrl"
-SAINT_EXPRESS_INT_DIR = SAINT_DIR + "saintexpress-int"
-SAINT_EXPRESS_SPC_DIR = SAINT_DIR + "saintexpress-spc"
+SAINT_EXPRESS_INT_DIR = SAINT_DIR + "SAINTexpress-int"
+SAINT_EXPRESS_SPC_DIR = SAINT_DIR + "SAINTexpress-spc"
 
 ########################################################################################################################
 # Command line argument parsing
@@ -108,7 +109,7 @@ if args.SAINT == "v2":
     elif args.quantification == "spc":
         if not os.path.exists(SAINT_v2_SPC_DIR):
             print("ERROR: " + SAINT_v2_SPC_DIR + " not found")
-            #exit(1)
+            exit(1)
 
 if args.SAINT == "express":
     if args.quantification == "intensity" or args.quantification == "LFQ":
@@ -130,3 +131,11 @@ if args.imputation and args.imputation == "1" and args.quantification == "spc":
 experimental_design = ExperimentalDesign(args.experimentalDesign)
 
 # process MaxQuant proteinGroups
+protein_groups = ProteinGroups(experimental_design, args.proteinGroups, args.quantification)
+
+# impute missing values if requested
+if args.imputation == "1":
+    protein_groups.impute()
+
+if args.SAINT == "v2":
+    protein_groups.to_SAINTv2(args.outputPath)
