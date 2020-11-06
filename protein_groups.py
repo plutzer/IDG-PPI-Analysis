@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import csv
 import re
+import sys
 from collections import defaultdict
 from math import sqrt, log2, pow
 
@@ -13,7 +14,6 @@ def get_quant_col_prefix(quantification):
     elif quantification == "spc":
         return "MS/MS count "
 
-
 class ProteinGroups:
     def __init__(self, experimental_design, file_path, quantification_saint, quantification_comppass):
         print("\nParsing MaxQuant proteinGroups: " + file_path)
@@ -21,7 +21,7 @@ class ProteinGroups:
         self.experimental_design = experimental_design
         self.quantification_saint = quantification_saint
         self.quantification_comppass = quantification_comppass
-        self.data = pd.read_csv(file_path, sep="\t", quotechar="'")
+        self.data = pd.read_csv(file_path, sep="\t", quotechar="'", low_memory=False)
 
         self.quant_col_prefix_saint = get_quant_col_prefix(quantification_saint)
         self.quant_col_prefix_comppass = get_quant_col_prefix(quantification_comppass)
@@ -117,6 +117,25 @@ class ProteinGroups:
                                     self.experimental_design.name2experiment[exp_name].attributes["Bait"],
                                     row["Short protein IDs"],
                                     row[quant_col]])
+
+# CompPASS CSV File to be used in R
+    def write_CompPASS(self, out_path):
+        with open(out_path, 'w', newline='\n', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile, delimiter='\t')
+            writer.writerow(["Experiment.ID", "Replicate", "Bait", "Prey", "Prey.Name", "Spectral.Count"])
+            for index, row in self.data.iterrows():
+                for quant_col in self.quant_cols_comppass:
+                    exp_name = quant_col.split(self.quant_col_prefix_comppass)[-1]
+                    exp_name_trim = re.match("(.+)_\d+$", exp_name).groups()[0]
+                    if row[quant_col] > 0:
+                        writer.writerow([self.experimental_design.name2experiment[exp_name].attributes["Bait"],
+                                     self.experimental_design.name2experiment[exp_name].attributes["Replicate"],
+                                     self.experimental_design.name2experiment[exp_name].attributes["Bait ID"],
+                                     row["Short protein IDs"], row["Gene names"], row[quant_col]])
+
+# Start ComPASS
+    def to_CompPASS(self, out_path):
+        self.write_CompPASS(os.path.join(out_path,"to_CompPASS.csv"))
 
     def to_SAINT(self, out_path):
         self.write_prey_file(os.path.join(out_path, "prey.txt"))
@@ -253,24 +272,24 @@ class ProteinGroups:
 
         return prey2bait2scores
 
-    def align_scores(self, saint_path, prey2bait2comppass, out_path):
-        with open(saint_path, encoding='utf-8-sig') as csvfile:
-            reader = csv.reader(csvfile, delimiter="\t")
-            header = next(reader)
+#    def align_scores(self, saint_path, prey2bait2comppass, out_path):
+#        with open(saint_path, encoding='utf-8-sig') as csvfile:
+#            reader = csv.reader(csvfile, delimiter="\t")
+#            header = next(reader)
 
-            with open(out_path, 'w') as csvfile_out:
-                writer = csv.writer(csvfile_out, delimiter='\t')
+#            with open(out_path, 'w') as csvfile_out:
+#                writer = csv.writer(csvfile_out, delimiter='\t')
 
-                new_header = header
-                new_header.extend(["WD-score", "D-score", "frequency"])
-                writer.writerow(new_header)
-                for row in reader:
-                    prey = row[1]
-                    bait = row[0]
-                    new_row = row
+#                new_header = header
+#                new_header.extend(["WD-score", "D-score", "frequency"])
+#                writer.writerow(new_header)
+#                for row in reader:
+#                    prey = row[1]
+#                    bait = row[0]
+#                    new_row = row
 
-                    new_row.extend(prey2bait2comppass[prey][bait])
-                    writer.writerow(new_row)
+#                    new_row.extend(prey2bait2comppass[prey][bait])
+#                    writer.writerow(new_row)
 
 
 

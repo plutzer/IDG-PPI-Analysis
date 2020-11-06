@@ -43,7 +43,7 @@ all: makeDirs \
 saint-reformat:
 	$(CC) $(CFLAGS) -c $(SRC)/SAINTreformat/*.c $(SRC)/SAINTreformat/*.h
 	mv *.o $(BUILD)
-	$(CC) $(LIBS) $(BUILD)/*.o -o $(TARGET)/saint-reformat
+	$(CC) $(BUILD)/*.o -o $(TARGET)/saint-reformat $(LIBS)
 	rm $(BUILD)/*.o
 	@echo
 	@echo
@@ -52,7 +52,7 @@ saint-reformat:
 saint-spc-noctrl-matrix:
 	$(CC) $(CFLAGS) -c $(SRC)/SAINTspc-noctrl-matrix/*.c $(SRC)/SAINTspc-noctrl-matrix/*.h
 	mv *.o $(BUILD)
-	$(CC) $(LIBS) $(BUILD)/*.o -o $(TARGET)/saint-spc-noctrl-matrix
+	$(CC) $(BUILD)/*.o -o $(TARGET)/saint-spc-noctrl-matrix $(LIBS)
 	rm $(BUILD)/*.o
 	@echo
 	@echo
@@ -60,7 +60,7 @@ saint-spc-noctrl-matrix:
 saint-spc-noctrl:
 	$(CC) $(CFLAGS) -c $(SRC)/SAINTspc-noctrl/*.c $(SRC)/SAINTspc-noctrl/*.h
 	mv *.o $(BUILD)
-	$(CC) $(LIBS) $(BUILD)/*.o -o $(TARGET)/saint-spc-noctrl
+	$(CC) $(BUILD)/*.o -o $(TARGET)/saint-spc-noctrl $(LIBS)
 	rm $(BUILD)/*.o
 	@echo
 	@echo
@@ -69,7 +69,7 @@ saint-spc-noctrl:
 saint-spc-ctrl:
 	$(CC) $(CFLAGS) -c $(SRC)/SAINTspc-ctrl/*.c $(SRC)/SAINTspc-ctrl/*.h
 	mv *.o $(BUILD)
-	$(CC) $(LIBS) $(BUILD)/*.o -o $(TARGET)/saint-spc-ctrl
+	$(CC) $(BUILD)/*.o -o $(TARGET)/saint-spc-ctrl $(LIBS)
 	rm $(BUILD)/*.o
 	@echo
 	@echo
@@ -78,7 +78,7 @@ saint-spc-ctrl:
 saint-int-ctrl:
 	$(CC) $(CFLAGS) -c $(SRC)/SAINTint-ctrl/*.c $(SRC)/SAINTint-ctrl/*.h
 	mv *.o $(BUILD)
-	$(CC) $(LIBS) $(BUILD)/*.o -o $(TARGET)/saint-int-ctrl
+	$(CC) $(BUILD)/*.o -o $(TARGET)/saint-int-ctrl $(LIBS)
 	rm $(BUILD)/*.o
 	@echo
 	@echo

@@ -187,8 +187,9 @@ if args.SAINT == "q":
 else:
     protein_groups.to_SAINT(args.outputPath)
 
-# execute CompPASS
-prey2bait2comppass = protein_groups.calc_CompPASS()
+# output ComPASS formatted files
+#prey2bait2comppass = protein_groups.calc_CompPASS()
+protein_groups.to_CompPASS(args.outputPath)
 
 # execute SAINT
 if args.SAINT == "q":
@@ -230,11 +231,31 @@ if args.SAINT == "express":
                         os.path.join(args.outputPath, "bait.txt")])
 
 
-if args.SAINT == "express":
-    protein_groups.align_scores(os.path.join(args.outputPath,  "list.txt"),
-                                prey2bait2comppass,
-                                os.path.join(args.outputPath, "candidates.tsv"))
-else:
-    protein_groups.align_scores(os.path.join(args.outputPath, "RESULT", "unique_interactions"),
-                                prey2bait2comppass,
-                                os.path.join(args.outputPath, "candidates.tsv"))
+#if args.SAINT == "express":
+#    protein_groups.align_scores(os.path.join(args.outputPath,  "list.txt"),
+#                                prey2bait2comppass,
+#                                os.path.join(args.outputPath, "candidates.tsv"))
+#else:
+#    protein_groups.align_scores(os.path.join(args.outputPath, "RESULT", "unique_interactions"),
+#                                prey2bait2comppass,
+#                                os.path.join(args.outputPath, "candidates.tsv"))
+
+#Run R Script for CompPASS
+q = subprocess.run(["Rscript",
+                    "compPASS.R",
+                    os.path.join(args.outputPath,"to_CompPASS.csv"),
+                    os.path.join(args.outputPath, "CompPASS.csv")])
+
+# Start R Script to merge CompPASS and SAINT
+merge = subprocess.run(["Rscript",
+                    "Merge_CompPASS_SAINT.R",
+                    os.path.join(args.outputPath, "compPASS.csv"),
+                        os.path.join(args.outputPath, "list.txt"),
+                    os.path.join(args.outputPath, "Merge_CompPASS_SAINT.csv")])
+
+# Run R Script to annotate the merged files
+#annotate = subprocess.run(["Rscript",
+#                    "annotate.R",
+#                    os.path.join(args.outputPath, "Merge_CompPASS_SAINT.csv"),
+#                     os.path.join(args.outputPath, "Annotated_Merge.csv"),
+#                  os.path.join(args.outputPath, "Annotated_Merge_top5.csv")])
