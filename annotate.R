@@ -3,11 +3,6 @@
 # Created by: Smaranda
 # Created on: 9/3/2020
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("org.Hs.eg.db")
-
 library(tidyverse)
 library(org.Hs.eg.db)
 library(DarkKinaseTools)
@@ -16,10 +11,8 @@ select <- get(x="select", pos = "package:dplyr")
 
 uniprot.mapping <- read_tsv("annotations/uniprot_mapping.tsv.zip")
 
-st <- read.csv(file='Merge_CompPASS_SAINT.csv', header = TRUE, sep = ",", stringsAsFactors = FALSE)
+st <- read.csv(file='output/Merge_CompPASS_SAINT.csv', header = TRUE, sep = ",", stringsAsFactors = FALSE)
 
-biogrid <- read.csv(file = 'C:/Users/Smaranda/Documents/BIDS/BIOGRID-ORGANISM-Homo_sapiens-4.0.189.tab3.txt', header = TRUE, sep="\t", stringsAsFactors = FALSE)
- 
 #Bait Uniprot
 #Grab Unique Baits
 unique.Baits <- unique(st$Bait)
@@ -33,8 +26,8 @@ proteins <- separate(proteins, "Uniprot.Identifier", c("Unique.Uniprot.Identifie
 # fill Entrez GeneID
 proteins <- left_join(proteins, uniprot.mapping, by=c("Unique.Uniprot.Identifier" = "UniProt"))
 
-#Prey Uniprot
-
+# renaming columns
+#proteins <- rename(proteins, c("Uniprot.Identifier" = "First.Prey.Uniprot", "Unique.Uniprot.Identifier" = "Canon.First.Prey.Uniprot"))
 
 ################################################################################
 
@@ -52,21 +45,21 @@ for(i in 1:length(go)) {
   goslim <- tibble(Gene.ID = goids[[1]], Evidence = names(goids[[1]]))
   goslim <- filter(goslim, "IEA" != Evidence)
   goslim <- (goslim %>% 
-                group_by(Gene.ID)%>% 
-                summarise(n=n()))
+               group_by(Gene.ID)%>% 
+               summarise(n=n()))
   proteins <- left_join(proteins, goslim, by=c("GeneID" = "Gene.ID")) %>% 
     mutate(
       goNames = !is.na(n) 
     ) %>% 
     select(-`n`) %>% 
-    rename("goNames" = go[i])
+    rename(goNames = go[i])
 }
 
 #Merge GO Slim in Single Column
 proteins$GO.Slim <- apply(proteins, 1, function(x) {
   str_c(go[as.logical(c(x[["Nucleus"]],x[["Cytoplasm"]],x[["Cytoskeleton"]], x[["Endosome"]], x[["ER"]],
-                               x[["Extracellular"]], x[["Golgi"]], x[["Lysosome"]], x[["Mitochondria"]],
-                               x[["Peroxisome"]], x[["Plasma_Membrane"]], x[["Vesicles"]], x[["Cell_Junction"]]))], 
+                        x[["Extracellular"]], x[["Golgi"]], x[["Lysosome"]], x[["Mitochondria"]],
+                        x[["Peroxisome"]], x[["Plasma_Membrane"]], x[["Vesicles"]], x[["Cell_Junction"]]))], 
         collapse = ";")
   }
 )
@@ -77,48 +70,32 @@ proteins <- filter(proteins, BFDR <= 0.05, AvgP >= 0.7)
 #Filter CompPASS
 proteins <- arrange(proteins, desc(WD))
 
-
 #Annotate Dark Kinases
 proteins <- left_join(proteins, all_kinases, by=c("First_GeneID" = "entrez_id"))
-  
+
 #Is it a Bait Column
 proteins$is_Bait <- apply(proteins, 1, function(x) {
-    any(str_detect(unique.Baits, x[["Unique.Uniprot.Identifier"]]))
+  any(str_detect(unique.Baits, x[["Unique.Uniprot.Identifier"]]))
   }
 )
 
-#Is In BioGrid (T/F)
-entrezBioGrid <- tibble(First_GeneID = unique(c(biogrid$Entrez.Gene.Interactor.A,biogrid$Entrez.Gene.Interactor.B))) %>%
-  mutate_all(list(as.numeric)) %>%
-  mutate(in_BioGrid = TRUE)
+#Nice bait name column addition by grabbing from prey name if it pairs with is_bait column
+baitName <- tibble(proteins$Unique.Uniprot.Identifier, Nice.Bait.Name = NA, proteins$PreyGene, proteins$is_Bait) %>%
+  mutate(Nice.Bait.Name = ifelse(proteins$is_Bait == TRUE, proteins$Unique.Uniprot.Identifier, Nice.Bait.Name)) %>%
+  dplyr::rename(Unique.Uniprot.Identifier = "proteins$Unique.Uniprot.Identifier", Bait.Gene = "proteins$PreyGene" , is_Bait = "proteins$is_Bait")
 
-proteins <- left_join(proteins, entrezBioGrid, by = "First_GeneID")
+baitName <- filter(baitName, is_Bait == TRUE) %>%
+  select(-is_Bait)
 
-proteins$in_BioGrid <- apply(proteins, 1, function(x) {
-  any(str_detect(entrezA, x[["First_GeneID"]]))
-  }
-)
+proteins <- left_join(proteins, baitName, by=c("Unique.Uniprot.Identifier" = "Unique.Uniprot.Identifier"))
 
-proteins$in_BioGRID <- apply(proteins, 1, function(x) {
-  nrow(filter(biogrid, (`Entrez.Gene.Interactor.A` == as.numeric(x[["First_GeneID"]]))
-  ))
-}) 
-
-#How many times in BioGrid
-biogridNum <- (entrezA %>% 
-             summarise(n=n()))
-proteins$Num_times_in_BioGrid <- NA
-proteins <- left_join(proteins, biogridNum, by=c("Num_times_in_BioGrid" = "x"))
-
-#What experiments were used in BioGrid
-  
 #Write file with all experiments
-write_csv(proteins, 'C:/Users/Smaranda/Documents/BIDS/Merged_Results/Annotations/Annotated_Merge.csv')
-  
+write_csv(proteins, 'output/Annotated_Merge.csv')
+
 #Filter Top Percent of CompPASS 
 top <- 0.05*nrow(proteins)
-  
+
 proteins <- proteins[1:top,]
 
 #Write file with only top percent of CompPass
-write_csv(proteins, 'C:/Users/Smaranda/Documents/BIDS/Merged_Results/Annotations/Annotated_Merge_top5.csv')
+write_csv(proteins, 'output/Annotated_Merge_top5.csv')

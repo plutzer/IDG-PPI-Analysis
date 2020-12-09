@@ -5,10 +5,10 @@
 
 library("tidyverse")
 
-comp <- read.csv(file='compPASS.csv', header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-saint <- read.csv(file='list.txt', sep="\t")
+comp <- read.csv(file='output/compPASS.csv', header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+saint <- read.csv(file='output/list.txt', sep="\t")
 
 merg = left_join(comp, saint, by = c("Experiment.ID" = "Bait", "Prey"))
 
-write_csv(merg, 'Merge_CompPASS_SAINT.csv')
+write_csv(merg, 'output/Merge_CompPASS_SAINT.csv')
 

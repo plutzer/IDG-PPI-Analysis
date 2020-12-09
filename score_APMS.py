@@ -207,9 +207,9 @@ if args.SAINT == "v2":
 
     print("\nExecuting SAINT:", SAINT_path)
     p = subprocess.run([SAINT_path,
-                        os.path.join(args.outputPath, "interaction.txt"),
-                        os.path.join(args.outputPath, "prey.txt"),
-                        os.path.join(args.outputPath, "bait.txt"),
+                        os.path.join(args.outputPath, "output/interaction.txt"),
+                        os.path.join(args.outputPath, "output/prey.txt"),
+                        os.path.join(args.outputPath, "output/bait.txt"),
                         str(args.nburnin),
                         str(args.niter),
                         str(args.lowMode),
@@ -228,11 +228,12 @@ if args.SAINT == "express":
                         "2",
                         os.path.join(args.outputPath, "interaction.txt"),
                         os.path.join(args.outputPath, "prey.txt"),
-                        os.path.join(args.outputPath, "bait.txt")])
+                        os.path.join(args.outputPath, "bait.txt")],
+                       cwd="output\\")
 
 
 #if args.SAINT == "express":
-#    protein_groups.align_scores(os.path.join(args.outputPath,  "list.txt"),
+#    protein_groups.align_scores(os.path.join(args.outputPath,  "output\list.txt"),
 #                                prey2bait2comppass,
 #                                os.path.join(args.outputPath, "candidates.tsv"))
 #else:
@@ -243,19 +244,19 @@ if args.SAINT == "express":
 #Run R Script for CompPASS
 q = subprocess.run(["Rscript",
                     "compPASS.R",
-                    os.path.join(args.outputPath,"to_CompPASS.csv"),
-                    os.path.join(args.outputPath, "CompPASS.csv")])
+                    os.path.join(args.outputPath,"output/to_CompPASS.csv"),
+                    os.path.join(args.outputPath, "output/CompPASS.csv")])
 
 # Start R Script to merge CompPASS and SAINT
 merge = subprocess.run(["Rscript",
                     "Merge_CompPASS_SAINT.R",
-                    os.path.join(args.outputPath, "compPASS.csv"),
-                        os.path.join(args.outputPath, "list.txt"),
-                    os.path.join(args.outputPath, "Merge_CompPASS_SAINT.csv")])
+                    os.path.join(args.outputPath, "output/compPASS.csv"),
+                        os.path.join(args.outputPath, "output/list.txt"),
+                    os.path.join(args.outputPath, "output/Merge_CompPASS_SAINT.csv")])
 
 # Run R Script to annotate the merged files
-#annotate = subprocess.run(["Rscript",
-#                    "annotate.R",
-#                    os.path.join(args.outputPath, "Merge_CompPASS_SAINT.csv"),
-#                     os.path.join(args.outputPath, "Annotated_Merge.csv"),
-#                  os.path.join(args.outputPath, "Annotated_Merge_top5.csv")])
+annotate = subprocess.run(["Rscript",
+                    "annotate.R",
+                    os.path.join(args.outputPath, "output/Merge_CompPASS_SAINT.csv"),
+                     os.path.join(args.outputPath, "output/Annotated_Merge.csv"),
+                  os.path.join(args.outputPath, "output/Annotated_Merge_top5.csv")])

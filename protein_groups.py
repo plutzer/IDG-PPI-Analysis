@@ -135,12 +135,12 @@ class ProteinGroups:
 
 # Start ComPASS
     def to_CompPASS(self, out_path):
-        self.write_CompPASS(os.path.join(out_path,"to_CompPASS.csv"))
+        self.write_CompPASS(os.path.join(out_path,"output/to_CompPASS.csv"))
 
     def to_SAINT(self, out_path):
-        self.write_prey_file(os.path.join(out_path, "prey.txt"))
-        self.write_bait_file(os.path.join(out_path, "bait.txt"))
-        self.write_interaction_file(os.path.join(out_path, "interaction.txt"))
+        self.write_prey_file(os.path.join(out_path, "output/prey.txt"))
+        self.write_bait_file(os.path.join(out_path, "output/bait.txt"))
+        self.write_interaction_file(os.path.join(out_path, "output/interaction.txt"))
 
     def to_SAINTq(self, out_path, normalize_control, compress_n_ctrl, compress_n_rep):
         self.write_toSAINTq_intensity_file(os.path.join(out_path, "intensities.txt"))
