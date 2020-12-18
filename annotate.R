@@ -80,14 +80,12 @@ proteins$is_Bait <- apply(proteins, 1, function(x) {
 )
 
 #Nice bait name column addition by grabbing from prey name if it pairs with is_bait column
-baitName <- tibble(proteins$Unique.Uniprot.Identifier, Nice.Bait.Name = NA, proteins$PreyGene, proteins$is_Bait) %>%
-  mutate(Nice.Bait.Name = ifelse(proteins$is_Bait == TRUE, proteins$Unique.Uniprot.Identifier, Nice.Bait.Name)) %>%
-  dplyr::rename(Unique.Uniprot.Identifier = "proteins$Unique.Uniprot.Identifier", Bait.Gene = "proteins$PreyGene" , is_Bait = "proteins$is_Bait")
+baitTable <- proteins %>%
+  filter(is_Bait == TRUE) %>%
+  select(Unique.Uniprot.Identifier, BaitGene = PreyGene) %>%
+  distinct() 
 
-baitName <- filter(baitName, is_Bait == TRUE) %>%
-  select(-is_Bait)
-
-proteins <- left_join(proteins, baitName, by=c("Unique.Uniprot.Identifier" = "Unique.Uniprot.Identifier"))
+proteins <- left_join(proteins, baitTable, by="Unique.Uniprot.Identifier")
 
 #Write file with all experiments
 write_csv(proteins, 'output/Annotated_Merge.csv')
