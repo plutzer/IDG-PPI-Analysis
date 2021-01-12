@@ -3,6 +3,11 @@
 # Created by: Smaranda
 # Created on: 9/3/2020
 
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#  install.packages("BiocManager")
+
+#BiocManager::install("org.Hs.eg.db")
+
 library(tidyverse)
 library(org.Hs.eg.db)
 library(DarkKinaseTools)

@@ -3,6 +3,9 @@ import sys
 import json
 from collections import defaultdict
 
+#def test ():
+#    1
+
 #Input results file
 Kinase_infile = open("output/Annotated_Merge_top5.csv", 'r')
 
@@ -41,12 +44,13 @@ def addEdge(source, target, edge_type, i, numBaits):
     }
     data.append(json_edge)
 
+header = Kinase_infile.readline().strip().split(',')
 
 for line in Kinase_infile:
     pl = line.strip().split(",")
-    prey_prot_for_kinase = pl[4]
-    if not "NA" in pl[50]:
-        is_dark = pl[50] == "Dark"
+    prey_prot_for_kinase = pl[header.index("PreyGene")]
+    if not "NA" in pl[header.index("class_2019")]:
+        is_dark = pl[header.index("class_2019")] == "Dark"
         kinases[prey_prot_for_kinase] = is_dark
 
 baits = set()
@@ -54,13 +58,14 @@ prey = defaultdict(dict)
 
 Kinase_infile.seek(0)
 
-header = Kinase_infile.readline().split(',')
+Kinase_infile.readline()
+
 for line in Kinase_infile:
-    pl = line.split(",")
-    bait_gene = pl[58]
+    pl = line.strip().split(",")
+    bait_gene = pl[header.index("BaitGene")].strip()
     AP_type = "MiniTurbo"
-    prey_prot = pl[4]
-    prey_gene = pl[14]
+    prey_prot = pl[header.index("Unique.Uniprot.Identifier")]
+    prey_gene = pl[header.index("PreyGene")]
 
     if bait_gene != prey_gene and prey_gene != '':
         baits.add(bait_gene)
