@@ -257,7 +257,7 @@ merge = subprocess.run(["Rscript",
 
 # Run R Script to annotate the merged files
 annotate = subprocess.run(["Rscript",
-                    "annotate.R",
+                    "annotate_filter.R",
                     os.path.join(args.outputPath, "output/Merge_CompPASS_SAINT.csv"),
-                     os.path.join(args.outputPath, "output/Annotated_Merge.csv"),
-                  os.path.join(args.outputPath, "output/Annotated_Merge_top5.csv")])
+                     os.path.join(args.outputPath, "output/Annotated_Merge_filtered_ALL.csv"),
+                  os.path.join(args.outputPath, "output/Annotated_Merge_filtered_DKK.csv")])
