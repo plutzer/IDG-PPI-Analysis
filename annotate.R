@@ -87,10 +87,11 @@ proteins$is_Bait <- apply(proteins, 1, function(x) {
 #Nice bait name column addition by grabbing from prey name if it pairs with is_bait column
 baitTable <- proteins %>%
   filter(is_Bait == TRUE) %>%
-  select(Unique.Uniprot.Identifier, BaitGene = PreyGene) %>%
+  filter(str_detect(Bait, Prey)) %>%
+  select(Bait, BaitGene = PreyGene) %>%
   distinct() 
 
-proteins <- left_join(proteins, baitTable, by="Unique.Uniprot.Identifier")
+proteins <- left_join(proteins, baitTable, by="Bait")
 
 #Write file with all experiments
 write_csv(proteins, 'output/Annotated_Merge.csv')

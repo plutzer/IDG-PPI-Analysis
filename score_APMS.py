@@ -246,7 +246,7 @@ if args.SAINT == "express":
 q = subprocess.run(["Rscript",
                     "compPASS.R",
                     os.path.join(args.outputPath,"output/to_CompPASS.csv"),
-                    os.path.join(args.outputPath, "output/CompPASS.csv")])
+                    os.path.join(args.outputPath, "output/compPASS.csv")])
 
 # Start R Script to merge CompPASS and SAINT
 merge = subprocess.run(["Rscript",
