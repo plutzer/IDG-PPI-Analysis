@@ -19,10 +19,10 @@ cytoscape <- data %>%
   mutate(saint = ifelse(BFDR <= 0.05 & AvgP >= 0.7, TRUE, FALSE)) %>%
   right_join(all.data.cytoscape, by = c("Bait", "Prey")) %>%
   select(Bait.Gene.Name, Prey.Gene.Name, saint, compPASS, in_BioGRID, is_Bait, Nucleus, Cytoplasm, Cytoskeleton, Endosome, ER, 
-         Extracellular, Golgi, Lysosome, Mitochondria, Peroxisome, Plasma_Membrane, Vesicles, Cell_Junction)
+         Extracellular, Golgi, Lysosome, Mitochondria, Peroxisome, Plasma_Membrane, Vesicles, Cell_Junction, class_2019)
 
-cytoscape <- cytoscape %>%
-  dplyr::filter(grepl('CLK3|CLK4|DYRK2|LMTK2|PIP5K1A|PRPF4B|RIOK1|STK19|STK17A', Bait.Gene.Name))
+#cytoscape <- cytoscape %>%
+#  dplyr::filter(grepl('CLK3|CLK4|DYRK2|LMTK2|PIP5K1A|PRPF4B|RIOK1|STK19|STK17A', Bait.Gene.Name))
 
 }
 

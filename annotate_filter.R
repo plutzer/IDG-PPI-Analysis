@@ -167,6 +167,9 @@ for (mybait in baits) {
   bait.data.filter <- data.filter %>% filter(Bait == mybait)
   num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
   all.data.filter <- all.data.filter %>% add_row(bait.data.filter[1:num.interactors, ])
+  
+  prey.prey.inter <- filter(interactions, (`interactor_min` %in%  bait.data.filter$First.Prey.GeneID), (`interactor_max` %in%  bait.data.filter$First.Prey.GeneID))
+  write_csv(prey.prey.inter, str_c('output/Prey_Prey_Interactions/', mybait, '.csv'))
 }
 
 #Write file with filtered experiments, keeping everything

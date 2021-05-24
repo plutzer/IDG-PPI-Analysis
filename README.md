@@ -1,3 +1,43 @@
+# IDG Interactome PPI Analysis Pipeline
+The Interactome PPI Analysis Pipeline uses two different protein interaction identifying software – 
+SAINT and CompPASS – to form a consensus prediction on protein-protein interactions. The goal of this 
+pipeline is to better identify protein-protein interactions and filter through contaminants in 
+Affinity Purification Mass Spectrometry (AP/MS) data. It currently adds GO and BioGrid annotations.
+
+#Installation
+- MaxQuant
+- Python 3.9
+- R 4.0.3
+- Copy precompiled binary file for Saint Express from “external” folder to “bin” folder
+- Install cRomppass branch from the smarasolo github repository using:
+```console
+library("devtools")
+devtools::install_github("smarasolo/cRomppass")
+library("cRomppass") 
+```
+- Install org.Hs.eg.db through the BiocManger package
+```console
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("org.Hs.eg.db")
+```
+
+#Input Files
+experimentalDesign.csv
+- 5 columns
+  - Experiment name – the protein name and run number of the experiment
+    - ** Has to match experiment name that was used in MaxQuant because it is matched with the MS/MS count column from MaxQuant for further analysis **
+    - You can make sure the experiment name is the same by checking the experiment_name MS/MS count column in the MaxQuant results
+- Type – T, for test/experiments, or C, for controls
+- Bait – name of bait
+- Replicate – replicate number
+- Bait ID – Uniprot ID for Bait
+  - Exactly matches the identifier in the MaxQuant results so if a bait matches two Protein IDS, it is recorded in the Bait Id
+
+proteinGroups.txt
+
+#Usage
 Basic usage:
 1) Open up a terminal (powershell, cmd, or cmder)
 2) Navigate to the directory with your proteinGroups.txt and experimentDesign.csv file
@@ -50,3 +90,50 @@ optional arguments:
                         greater than or equal to the number of available replicates, then the scores will use the data from all replicates. Otherwise, the highest scoring
                         replicate scores wil lbe averaged to yield the final probability score. Default: 1000
 ```
+
+#Output files
+Saint Input:
+- bait.txt – list of baits
+- interaction.txt – list of interactions
+- prey.txt – list of prey
+
+Saint Output:
+- list.txt 
+   - Output columns in list:
+      - Spec
+      - SpecSum
+      - AvgSpec
+      - NumReplicates
+      - ctrlCounts – the number of spectra in the pry across all controls
+      - AvgP – the average probability score for a bait and prey pair
+      - MaxP – the largest probability score for a bait and prey pair across all replicate purifications
+      - TopoAvgP
+      - SaintScore - the probability the bait/prey interaction is a true interaction
+      - logOddsScore
+      - FoldChange
+      - BFDR – A Bayesian false discovery rate SAINT calculates from a combined probability score from independent scoring of each replicate
+      - Boosted_by
+
+CompPASS Input:
+- to_CompPASS.csv – formats experimentalDesign to fit input needed for compPASS
+
+CompPASS Output:
+- compPASS.csv – runs compPASS on data from MaxQuant
+   - Columns in compPASS
+      - AvePSM
+      - SumAPSM
+      - Mean
+      - SD
+      - Little.N – Number of baits(including control) that had at least 1 spectral count
+      - Little.P – Number of replicates for this particular bait that had at least 1 spectral count
+      - Z -  Z-score for each bait and prey pair
+      - WD – WD-Score for each bait and prey pair as defined by Sowa et al.
+      - Entropy – The Shannon Entropy for each spectral count
+
+Final Output:
+- Merge_CompPASS_Saint.csv – Merges the compPASS and Saint outputs
+- Annotated_Merge_NO_FILTER.csv – Annotates the merged output with GO and Biogrid annotations, but no filter for Saint or CompPASS
+- Annotated_Merge_Saint_filter.csv – Takes the merged and annotated file from before and filters Saint for BFDR <= 0.05 and AvgP >= 0.7
+- Annotated_Merge_All_filtered.csv – Takes the merged, annotated, and filtered for Saint file and filters compPASS by taking the top 5% scored of each bait or the top 10 of each bait, if there are more than 10 in the top 5%
+- [bait name].csv – Every bait will have one of these files that includes the Entrez ID of any prey-prey interaction seen in that bait
+
