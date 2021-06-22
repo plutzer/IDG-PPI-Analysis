@@ -8,6 +8,12 @@
 
 #BiocManager::install("org.Hs.eg.db")
 
+if(!dir.exists(file.path('output/', 'Prey_Prey_Interactions/'))){
+  dir.create(file.path('output/', 'Prey_Prey_Interactions/'))
+} else {
+  FALSE
+}
+
 library(tidyverse)
 library(org.Hs.eg.db)
 library(DarkKinaseTools)
@@ -90,12 +96,9 @@ data$GO.Slim <- apply(data, 1, function(x) {
   
 #}
 
-
 #bait.data.filter <- data.filter %>% filter(Bait == mybait)
 #num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
 #all.data.filter <- all.data.filter %>% add_row(bait.data.filter[1:num.interactors, ])
-
-
 
 #Annotate Dark Kinases
 data <- left_join(data, all_kinases, by=c("First.Prey.GeneID" = "entrez_id"))
@@ -163,13 +166,37 @@ write_csv(data.filter, 'output/Annotated_Merge_Saint_filter.csv')
 baits <- unique((data.filter %>% filter(!is.na(BaitGene), is_Bait == TRUE, BaitGene == PreyGene))$Bait)
 all.data.filter <- data.filter[0,]
 
+#Create separate data tables for prey-prey interactions
 for (mybait in baits) {
+
   bait.data.filter <- data.filter %>% filter(Bait == mybait)
   num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
   all.data.filter <- all.data.filter %>% add_row(bait.data.filter[1:num.interactors, ])
   
-  prey.prey.inter <- filter(interactions, (`interactor_min` %in%  bait.data.filter$First.Prey.GeneID), (`interactor_max` %in%  bait.data.filter$First.Prey.GeneID))
-  write_csv(prey.prey.inter, str_c('output/Prey_Prey_Interactions/', mybait, '.csv'))
+  #Filtering for interactions
+  prey.prey.inter <- filter(interactions, (`interactor_min` %in%  bait.data.filter$First.Prey.GeneID), (`interactor_max` %in%  bait.data.filter$First.Prey.GeneID)) %>%
+    rename(c(interactor_min = "Prey.1.Entrez.ID", interactor_max = "Prey.2.Entrez.ID")) %>% #Changing column names
+     mutate(Prey.1.Entrez.ID = as.character(Prey.1.Entrez.ID), 
+            Prey.2.Entrez.ID = as.character(Prey.2.Entrez.ID)) #Changing data type from double to charcter to be left_joined with all.data.filter
+  
+  #Left_joining table with prey 1 and adding Uniprot and Nice Prey name columns
+   prey.prey.join <- left_join(prey.prey.inter, bait.data.filter, by=c("Prey.1.Entrez.ID" = "Prey.GeneID")) %>%
+     select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Bait.Uniprot, Prey.Gene.Name) %>%
+     rename(c(Canonical.First.Bait.Uniprot = "Prey.1.Uniprot", Prey.Gene.Name = "Prey.1.Gene.Name"))
+
+   #Left_joining table with prey 2 and adding Uniprot and Nice Prey name columns
+   prey.prey.final <- left_join(prey.prey.join, bait.data.filter, by=c("Prey.2.Entrez.ID" = "Prey.GeneID")) %>%
+     select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Prey.1.Uniprot, Prey.1.Gene.Name, Canonical.First.Bait.Uniprot, Prey.Gene.Name) %>%
+     rename(c(Canonical.First.Bait.Uniprot = "Prey.2.Uniprot", Prey.Gene.Name = "Prey.2.Gene.Name"))
+   prey.prey.final <- prey.prey.final[,c(4, 3, 1, 6, 5, 2)]
+   
+   #Add validation column (from Biogrid in this case) if dataframe has data in it
+    if(nrow(prey.prey.final) != 0){
+      prey.prey.final$Source <- 'Biogrid'
+    }
+   
+   #write individual csv files for each bait
+   write_csv(prey.prey.final, str_c('output/Prey_Prey_Interactions/', paste(unique(bait.data.filter$Bait.Gene.Name),"_",mybait,'.csv', sep = "")))
 }
 
 #Write file with filtered experiments, keeping everything
