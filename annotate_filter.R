@@ -18,6 +18,7 @@ library(tidyverse)
 library(org.Hs.eg.db)
 library(DarkKinaseTools)
 source("Cytoscape.R")
+source("SiRNA_data.R")
 
 select <- get(x="select", pos = "package:dplyr")
 
@@ -148,6 +149,13 @@ data$in_BioGRID <- apply(data, 1, function(x) {
 }) 
 
 ################################################################################
+#Add SiRNA Data
+
+sirna <- sirna.data(data)
+
+data <- left_join(data, sirna, by = c("Bait.Gene.Name" = "Gene.Symbol"))
+
+################################################################################
 #Filter and Write files
 
 #Write file with no filter
@@ -177,19 +185,18 @@ for (mybait in baits) {
   prey.prey.inter <- filter(interactions, (`interactor_min` %in%  bait.data.filter$First.Prey.GeneID), (`interactor_max` %in%  bait.data.filter$First.Prey.GeneID)) %>%
     rename(c(interactor_min = "Prey.1.Entrez.ID", interactor_max = "Prey.2.Entrez.ID")) %>% #Changing column names
      mutate(Prey.1.Entrez.ID = as.character(Prey.1.Entrez.ID), 
-            Prey.2.Entrez.ID = as.character(Prey.2.Entrez.ID)) #Changing data type from double to charcter to be left_joined with all.data.filter
+            Prey.2.Entrez.ID = as.character(Prey.2.Entrez.ID)) #Changing data type from double to character to be left_joined with all.data.filter
   
   #Left_joining table with prey 1 and adding Uniprot and Nice Prey name columns
-   prey.prey.join <- left_join(prey.prey.inter, bait.data.filter, by=c("Prey.1.Entrez.ID" = "Prey.GeneID")) %>%
-     select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Bait.Uniprot, Prey.Gene.Name) %>%
-     rename(c(Canonical.First.Bait.Uniprot = "Prey.1.Uniprot", Prey.Gene.Name = "Prey.1.Gene.Name"))
+   prey.prey.join <- left_join(prey.prey.inter, bait.data.filter, by=c("Prey.1.Entrez.ID" = "Prey.GeneID"))%>%
+     select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Prey.Uniprot, Prey.Gene.Name, WD) %>%
+     rename(c(Canonical.First.Prey.Uniprot = "Prey.1.Uniprot", Prey.Gene.Name = "Prey.1.Gene.Name", WD = "WD.1"))
 
    #Left_joining table with prey 2 and adding Uniprot and Nice Prey name columns
    prey.prey.final <- left_join(prey.prey.join, bait.data.filter, by=c("Prey.2.Entrez.ID" = "Prey.GeneID")) %>%
-     select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Prey.1.Uniprot, Prey.1.Gene.Name, Canonical.First.Bait.Uniprot, Prey.Gene.Name) %>%
-     rename(c(Canonical.First.Bait.Uniprot = "Prey.2.Uniprot", Prey.Gene.Name = "Prey.2.Gene.Name"))
-   prey.prey.final <- prey.prey.final[,c(4, 3, 1, 6, 5, 2)]
-   
+     select(Prey.1.Gene.Name, Prey.1.Uniprot, Prey.1.Entrez.ID, Prey.Gene.Name, Canonical.First.Prey.Uniprot, Prey.2.Entrez.ID, WD.1) %>%
+     rename(c(Canonical.First.Prey.Uniprot = "Prey.2.Uniprot", Prey.Gene.Name = "Prey.2.Gene.Name"))
+
    #Add validation column (from Biogrid in this case) if dataframe has data in it
     if(nrow(prey.prey.final) != 0){
       prey.prey.final$Source <- 'Biogrid'

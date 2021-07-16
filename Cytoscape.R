@@ -1,6 +1,6 @@
 # Title     : Cytoscape
 # Objective : create a Cytoscape File
-# Created by: Smaranda SOlomon
+# Created by: Smaranda Solomon
 # Created on: 2/26/2021
 
 #Filtered Cytoscape
