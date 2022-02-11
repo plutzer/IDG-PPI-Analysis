@@ -184,11 +184,7 @@ all.data.filter <- data.filter.comp[0,]
 #Create separate data tables for prey-prey interactions
 for (mybait in baits) {
   
-  # CDK2_P24941
-  # CSNK1G1_Q9HCP0
-  # CSNK1G2_P78368
-  # 
-   mybait <- "P24941"
+   #mybait <- "P24941"
 
   bait.data.filter <- data.filter.comp %>% filter(Bait == mybait)
   num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(data.filter.comp))

@@ -7,7 +7,7 @@ from collections import defaultdict
 #    1
 
 #Input results file
-Kinase_infile = open("output/Annotated_Merge_top5.csv", 'r')
+Kinase_infile = open("output/Annotated_Merge_DB_All_filtered.csv", 'r')
 
 #JSON outfile *In configurations*
 JSON_outfile = open(sys.argv[1], 'w')
@@ -64,7 +64,7 @@ for line in Kinase_infile:
     pl = line.strip().split(",")
     bait_gene = pl[header.index("BaitGene")].strip()
     AP_type = "MiniTurbo"
-    prey_prot = pl[header.index("Unique.Uniprot.Identifier")]
+    prey_prot = pl[header.index("Canonical.First.Prey.Uniprot")]
     prey_gene = pl[header.index("PreyGene")]
 
     if bait_gene != prey_gene and prey_gene != '':
