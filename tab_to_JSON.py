@@ -62,12 +62,14 @@ Kinase_infile.readline()
 
 for line in Kinase_infile:
     pl = line.strip().split(",")
-    bait_gene = pl[header.index("BaitGene")].strip()
+    bait_gene = pl[header.index("Bait.Gene.Name")].strip()
     AP_type = "MiniTurbo"
     prey_prot = pl[header.index("Canonical.First.Prey.Uniprot")]
-    prey_gene = pl[header.index("PreyGene")]
+    prey_gene = pl[header.index("Prey.Gene.Name")]
 
-    if bait_gene != prey_gene and prey_gene != '':
+    notDark = {"CDK2", "CDK7", "NFE2L1", "NFE2L2", "NFE2L3", "GSK3B", "PSKH2", "IDGNC3", "IDGT8", "KEAP1"}
+
+    if bait_gene != prey_gene and prey_gene != '' and bait_gene not in notDark:
         baits.add(bait_gene)
         if not AP_type in prey[prey_gene]:
             prey[prey_gene][AP_type] = 1

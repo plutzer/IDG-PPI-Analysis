@@ -18,11 +18,9 @@ library(tidyverse)
 library(org.Hs.eg.db)
 library(DarkKinaseTools)
 source("Cytoscape.R")
-source("SiRNA_data.R")
 #source("csnk1g_figures.R")
 
 select <- get(x="select", pos = "package:dplyr")
-#rename <- get(x = "rename", pos = "package:dplyr")
 
 uniprot.mapping <- read_tsv("annotations/uniprot_mapping.tsv.zip")
 
@@ -61,6 +59,11 @@ data <- rename(data, c(Gene_Name.x = "Prey.Gene.Name", Gene_Synonym.x = "Prey.Ge
                        Gene_Name.y = "Bait.Gene.Name", Gene_Synonym.y = "Bait.Gene.Synonym", GeneID.y = "Bait.GeneID", First_GeneID.y = "First.Bait.GeneID"))
 data <- data[,c(1,12,13,2:4,14,15,8,9,5:7,10,11,16:39)]
 
+data <- data %>%
+  drop_na(Prey.Gene.Name)
+
+write_csv(data, 'output/bait_cyto.csv') 
+
 ################################################################################
 #Annotations
 
@@ -92,16 +95,10 @@ data$GO.Slim <- apply(data, 1, function(x) {
                         x[["Extracellular"]], x[["Golgi"]], x[["Lysosome"]], x[["Mitochondria"]],
                         x[["Peroxisome"]], x[["Plasma_Membrane"]], x[["Vesicles"]], x[["Cell_Junction"]]))], 
         collapse = ";")
-}
+  }
 )
 
-#Priority GO Column: Either matched with bait or from uniprot
-#data$GO.Priority <- apply(data, 1, function(x)){
-#}
-
-#bait.data.filter <- data.filter %>% filter(Bait == mybait)
-#num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
-#all.data.filter <- all.data.filter %>% add_row(bait.data.filter[1:num.interactors, ])
+#write.csv(cyto, 'output/Cytoscape.csv')
 
 #Annotate Dark Kinases
 data <- left_join(data, all_kinases, by=c("First.Prey.GeneID" = "entrez_id"))
@@ -160,13 +157,6 @@ write_csv(data, 'output/Annotated_Merge_NO_FILTER.csv')
 #Filter SAINT
 data.filter <- filter(data, BFDR <= 0.05, AvgP >= 0.7)
 
-################################################################################
-#Add SiRNA Data
-
-sirna <- sirna.data()
-
-data.filter <- left_join(data.filter, sirna, by = c("Prey.Gene.Name" = "Gene.Symbol"), copy = TRUE)
-
 #Write file filtered for Saint
 write_csv(data.filter, 'output/Annotated_Merge_Saint_filter.csv')
 
@@ -184,10 +174,10 @@ all.data.filter <- data.filter.comp[0,]
 #Create separate data tables for prey-prey interactions
 for (mybait in baits) {
   
-   #mybait <- "P24941"
+  # mybait <- "Q8IZL9"
 
   bait.data.filter <- data.filter.comp %>% filter(Bait == mybait)
-  num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(data.filter.comp))
+  num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
   bait.data.filter.comp <- bait.data.filter[1:num.interactors, ]
   all.data.filter <- all.data.filter %>% add_row(bait.data.filter.comp)
   
@@ -238,7 +228,7 @@ all.data.dkk <- all.data.dkk %>%
 #Write file with filtered experiments, only Dark kinases
 write_csv(all.data.dkk, 'output/Annotated_Merge_filtered_DKK.csv')
 
-cyto <- to.Cytoscape(all.data.filter, data)
+#cyto <- to.Cytoscape(all.data.filter, data)
 
 #Write file with filtered experiments, only Dark kinases
-write_csv(cyto, 'output/Cytoscape.csv')
+#write_csv(cyto, 'output/Cytoscape.csv')

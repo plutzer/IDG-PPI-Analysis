@@ -113,10 +113,11 @@ class ProteinGroups:
             for index, row in self.data.iterrows():
                 for quant_col in self.quant_cols_saint:
                     exp_name = quant_col.split(self.quant_col_prefix_saint)[-1]
-                    writer.writerow([exp_name,
-                                    self.experimental_design.name2experiment[exp_name].attributes["Bait"],
-                                    row["Short protein IDs"],
-                                    row[quant_col]])
+                    if row[quant_col] != 0:
+                        writer.writerow([exp_name,
+                                        self.experimental_design.name2experiment[exp_name].attributes["Bait"],
+                                        row["Short protein IDs"],
+                                        row[quant_col]])
 
 # CompPASS CSV File to be used in R
     def write_CompPASS(self, out_path):

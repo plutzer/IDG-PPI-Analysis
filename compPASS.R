@@ -1,3 +1,8 @@
+# Title     : compPASS
+# Objective : Run compPASS on the raw data
+# Created by: Smaranda Solomon
+# Created: 2020
+
 #library("devtools")
 #devtools::install_github("smarasolo/cRomppass")
 #library("cRomppass")
