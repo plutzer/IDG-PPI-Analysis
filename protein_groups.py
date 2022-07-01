@@ -138,7 +138,7 @@ class ProteinGroups:
         self.write_CompPASS(os.path.join(out_path,"output/to_CompPASS.csv"))
 
     def to_SAINT(self, out_path):
-        self.write_prey_file(os.path.join(out_path, "output/prey.txt"))
+        self.write_prey_file(os.path.join(out_path, "output", "prey.txt"))
         self.write_bait_file(os.path.join(out_path, "output/bait.txt"))
         self.write_interaction_file(os.path.join(out_path, "output/interaction.txt"))
 
