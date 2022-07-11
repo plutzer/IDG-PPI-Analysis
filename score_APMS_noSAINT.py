@@ -14,6 +14,9 @@ SAINT_EXPRESS_INT_DIR = SAINT_DIR
 SAINT_EXPRESS_SPC_DIR = SAINT_DIR
 SAINT_Q_DIR = SAINT_DIR + "SAINTq"
 
+print("TESTING")
+
+
 ########################################################################################################################
 # Command line argument parsing
 ########################################################################################################################
@@ -171,6 +174,9 @@ if args.SAINT == "q":
 #    print("ERROR: Imputation of spectral counts is not supported.")
 #    exit(1)
 
+
+print("############### PARSING")
+
 # parse experimental design
 experimental_design = ExperimentalDesign(args.experimentalDesign)
 
@@ -192,72 +198,3 @@ else:
 #prey2bait2comppass = protein_groups.calc_CompPASS()
 protein_groups.to_CompPASS(args.outputPath)
 
-# execute SAINT
-if args.SAINT == "q":
-    SAINT_path = SAINT_Q_DIR
-    print("\nExecuting SAINT:", SAINT_path)
-    p = subprocess.run([SAINT_path,
-                        os.path.join(args.outputPath, "params.txt")])
-
-
-if args.SAINT == "v2":
-    if args.quantification_saint == "intensity" or args.quantification_saint == "LFQ":
-        SAINT_path = SAINT_v2_INT_DIR
-    else:
-        SAINT_path = SAINT_v2_SPC_DIR
-
-    print("\nExecuting SAINT:", SAINT_path)
-    p = subprocess.run([SAINT_path,
-                        os.path.join(args.outputPath, "output/interaction.txt"),
-                        os.path.join(args.outputPath, "output/prey.txt"),
-                        os.path.join(args.outputPath, "output/bait.txt"),
-                        str(args.nburnin),
-                        str(args.niter),
-                        str(args.lowMode),
-                        str(args.minFold),
-                        str(args.normalize)])
-
-if args.SAINT == "express":
-    if args.quantification_saint == "intensity" or args.quantification_saint == "LFQ":
-        SAINT_path = SAINT_EXPRESS_INT_DIR
-    else:
-        SAINT_path = SAINT_EXPRESS_SPC_DIR
-
-    print("\nExecuting SAINT:", SAINT_path)
-    p = subprocess.run([SAINT_path,
-                        "-L",
-                        "2",
-                        os.path.join(args.outputPath, "interaction.txt"),
-                        os.path.join(args.outputPath, "prey.txt"),
-                        os.path.join(args.outputPath, "bait.txt")],
-                       cwd=args.outputPath)
-
-
-#if args.SAINT == "express":
-#    protein_groups.align_scores(os.path.join(args.outputPath,  "output\list.txt"),
-#                                prey2bait2comppass,
-#                                os.path.join(args.outputPath, "candidates.tsv"))
-#else:
-#    protein_groups.align_scores(os.path.join(args.outputPath, "RESULT", "unique_interactions"),
-#                                prey2bait2comppass,
-#                                os.path.join(args.outputPath, "candidates.tsv"))
-
-#Run R Script for CompPASS
-q = subprocess.run(["Rscript",
-                    "compPASS.R",
-                    os.path.join(args.outputPath,"output/to_CompPASS.csv"),
-                    os.path.join(args.outputPath, "output/compPASS.csv")])
-
-# Start R Script to merge CompPASS and SAINT
-merge = subprocess.run(["Rscript",
-                    "Merge_CompPASS_SAINT.R",
-                    os.path.join(args.outputPath, "output/compPASS.csv"),
-                        os.path.join(args.outputPath, "output/list.txt"),
-                    os.path.join(args.outputPath, "output/Merge_CompPASS_SAINT.csv")])
-
-# Run R Script to annotate the merged files
-annotate = subprocess.run(["Rscript",
-                    "annotate_filter.R",
-                    os.path.join(args.outputPath, "output/Merge_CompPASS_SAINT.csv"),
-                     os.path.join(args.outputPath, "output/Annotated_Merge_filtered_ALL.csv"),
-                  os.path.join(args.outputPath, "output/Annotated_Merge_filtered_DKK.csv")])
