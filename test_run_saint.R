@@ -7,7 +7,7 @@
 library(reticulate)
 library(cRomppass)
 library(tidyverse)
-### dark kinase tools library
+library(DarkKinaseTools)
 library(org.Hs.eg.db)
 source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/Cytoscape.R")
 
@@ -143,7 +143,7 @@ data$GO.Slim <- apply(data, 1,
 
 
 #Annotate Dark Kinases
-# data <- left_join(data, all_kinases, by=c("First.Prey.GeneID" = "entrez_id"))
+data <- left_join(data, all_kinases, by=c("First.Prey.GeneID" = "entrez_id"))
 
 #Is it a Bait Column
 data$is_Bait <- apply(data, 1, function(x) {
