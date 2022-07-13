@@ -22,7 +22,7 @@ source("SiRNA_data.R")
 #source("csnk1g_figures.R")
 
 select <- get(x="select", pos = "package:dplyr")
-#rename <- get(x = "rename", pos = "package:dplyr")
+# rename <- get(x = "rename", pos = "package:dplyr")
 
 uniprot.mapping <- read_tsv("annotations/uniprot_mapping.tsv.zip")
 
@@ -37,7 +37,7 @@ unique.Baits <- unique(st$Bait)
 
 #Prey
 # extract Prey Uniprot Identifier
-data <- separate(data = st, col = `Prey`, into = c("First.Prey.Uniprot"), sep=";", remove=F, extra="drop")
+data <- separate(data = merge, col = `Prey`, into = c("First.Prey.Uniprot"), sep=";", remove=F, extra="drop")
 
 # Remove isoform from the Prey Uniprot Identifier
 data <- separate(data, "First.Prey.Uniprot", c("Canonical.First.Prey.Uniprot"), sep="-", remove=F, extra="drop")

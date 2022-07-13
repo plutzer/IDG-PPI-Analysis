@@ -1,3 +1,5 @@
 /build/
 /output/
 /__pycache__/
+/*.zip
+/BIOGRID-MV-Physical-4.4.211.tab3.txt
