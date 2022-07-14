@@ -23,6 +23,7 @@ biogrid_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/BIOGRID-MV-Physi
 
 setwd(output_dir)
 
+# For some unknown reason, this line is necessary even though it does nothing.
 py_run_string("print(\"Python is Running.\")")
 
 # Generate SAINT inputs from old scoreAPMS python script
@@ -192,88 +193,6 @@ interactions <- biogrid %>%
 
 # This solution works and is much faster
 bait_prey_pairs = transpose(as.list(data[, c("Bait.GeneID","Prey.GeneID")]))
-data$in_BioGRID = lapply(bait_prey_pairs, FUN=function(x){(any(interactions$interactor_min==as.numeric(x$Bait.GeneID) & interactions$interactor_max==as.numeric(x$Prey.GeneID)) |
+in_BioGRID = lapply(bait_prey_pairs, FUN=function(x){(any(interactions$interactor_min==as.numeric(x$Bait.GeneID) & interactions$interactor_max==as.numeric(x$Prey.GeneID)) |
                                                                   any(interactions$interactor_max==as.numeric(x$Bait.GeneID) & interactions$interactor_min==as.numeric(x$Prey.GeneID)))})
-################################################################################
-#Filter SAINT
-
-#Write file with no filter
-write_csv(data, paste(output_dir,'/Annotated_Merge_NO_FILTER.csv',sep=''))
-
-#Filter SAINT
-data.filter <- filter(data, BFDR <= 0.05, AvgP >= 0.7)
-
-write_csv(data.filter, paste(output_dir,'/Annotated_Merge_Saint_filter.csv',sep=''))
-
-################################################################################
-
-#Filter CompPASS
-#Arrange first
-data.filter.comp <- arrange(data.filter, desc(WD))
-
-#Filter by top 5% or top min *KEEPING Everything*
-baits <- unique((data.filter.comp %>% filter(!is.na(BaitGene), is_Bait == TRUE, BaitGene == PreyGene))$Bait)
-all.data.filter <- data.filter.comp[0,]
-
-#Create separate data tables for prey-prey interactions
-for (mybait in baits) {
-  
-  #mybait <- "P24941"
-  
-  bait.data.filter <- data.filter.comp %>% filter(Bait == mybait)
-  num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(data.filter.comp))
-  bait.data.filter.comp <- bait.data.filter[1:num.interactors, ]
-  all.data.filter <- all.data.filter %>% add_row(bait.data.filter.comp)
-  
-  #Filtering for interactions
-  prey.prey.inter <- filter(interactions, (`interactor_min` %in%  bait.data.filter.comp$First.Prey.GeneID), (`interactor_max` %in%  bait.data.filter.comp$First.Prey.GeneID)) %>%
-    rename(c(interactor_min = "Prey.1.Entrez.ID", interactor_max = "Prey.2.Entrez.ID")) %>% #Changing column names
-    mutate(Prey.1.Entrez.ID = as.character(Prey.1.Entrez.ID), 
-           Prey.2.Entrez.ID = as.character(Prey.2.Entrez.ID)) #Changing data type from double to character to be left_joined with all.data.filter
-  
-  #Left_joining table with prey 1 and adding Uniprot and Nice Prey name columns
-  prey.prey.join <- left_join(prey.prey.inter, bait.data.filter.comp, by=c("Prey.1.Entrez.ID" = "Prey.GeneID"))%>%
-    select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Prey.Uniprot, Prey.Gene.Name, WD) %>%
-    rename(c(Canonical.First.Prey.Uniprot = "Prey.1.Uniprot", Prey.Gene.Name = "Prey.1.Gene.Name", WD = "WD.1"))
-  
-  #Left_joining table with prey 2 and adding Uniprot and Nice Prey name columns
-  prey.prey.final <- left_join(prey.prey.join, bait.data.filter.comp, by=c("Prey.2.Entrez.ID" = "Prey.GeneID")) %>%
-    select(Prey.1.Gene.Name, Prey.1.Uniprot, Prey.1.Entrez.ID, WD.1, Prey.Gene.Name, Canonical.First.Prey.Uniprot, Prey.2.Entrez.ID, WD) %>%
-    rename(c(Canonical.First.Prey.Uniprot = "Prey.2.Uniprot", Prey.Gene.Name = "Prey.2.Gene.Name", WD = "WD.2")) %>%
-    unique()
-  
-  #Add validation column (from Biogrid in this case) if dataframe has data in it
-  if(nrow(prey.prey.final) != 0){
-    prey.prey.final$Source <- 'Biogrid'
-  }
-  
-  #write individual csv files for each bait
-  write_csv(prey.prey.final, str_c(paste(output_dir,'/Prey_Prey_Interactions/',sep=''), paste(unique(bait.data.filter$Bait.Gene.Name),"_",mybait,'.csv', sep = "")))
-}
-
-#Write file with filtered experiments, keeping everything
-write_csv(all.data.filter, paste(output_dir,'/Annotated_Merge_All_filtered.csv',sep=''))
-
-################################################################################
-#Filter by top 5% or top min *For DKK - no controls *
-baits.dkk <- unique((data.filter.comp %>% filter(!is.na(BaitGene), is_Bait == TRUE, BaitGene == PreyGene, !is.na(class_2019)))$Bait)
-all.data.dkk <- data.filter.comp[0,]
-
-for (mybait in baits.dkk) {
-  bait.data.filter <- data.filter.comp %>% filter(Bait == mybait)
-  num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
-  all.data.dkk <- all.data.dkk %>% add_row(bait.data.filter[1:num.interactors, ])
-}
-
-all.data.dkk <- all.data.dkk %>%
-  dplyr::filter(!grepl('CSNK1G1|CSNK1G2|CSNK1G3', Experiment.ID))
-
-################################################################################
-#Write file with filtered experiments, only Dark kinases
-write_csv(all.data.dkk, paste(output_dir,'/Annotated_Merge_filtered_DKK.csv',sep=''))
-
-cyto <- to.Cytoscape(all.data.filter, data)
-
-
-
-
+data$in_BioGRID = unlist(in_BioGRID)
