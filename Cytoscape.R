@@ -30,30 +30,30 @@ cytoscape <- data %>%
 ################################################################################
 #Create file for animated Cytoscape interaction network
 
-#baits <- unique((data %>% filter(!is.na(BaitGene), is_Bait == TRUE, BaitGene == PreyGene))$Bait)
-#all.data1 <- data[0,]
+baits <- unique((data %>% filter(!is.na(BaitGene), is_Bait == TRUE, BaitGene == PreyGene))$Bait)
+all.data1 <- data[0,]
 
-#for (mybait in baits) {
-#  bait.data <- data %>% filter(Bait == mybait)
-#  num.interactors <- min(max(10, nrow(bait.data)*0.05), nrow(bait.data))
-#  all.data1 <- all.data1 %>% add_row(bait.data[1:num.interactors, ])
-#}
+for (mybait in baits) {
+  bait.data <- data %>% filter(Bait == mybait)
+  num.interactors <- min(max(10, nrow(bait.data)*0.05), nrow(bait.data))
+  all.data1 <- all.data1 %>% add_row(bait.data[1:num.interactors, ])
+}
 
-#all.data1 <- all.data1 %>%
-#  mutate(compPASS = TRUE) %>%
-#  select(Bait, Prey, compPASS) %>%
-#  right_join(data, by = c("Bait", "Prey")) %>%
-#  replace_na(list(compPASS = FALSE))%>%
-#  select(Bait, Prey, compPASS)
+all.data1 <- all.data1 %>%
+  mutate(compPASS = TRUE) %>%
+  select(Bait, Prey, compPASS) %>%
+  right_join(data, by = c("Bait", "Prey")) %>%
+  replace_na(list(compPASS = FALSE))%>%
+  select(Bait, Prey, compPASS)
 
-#cytoscape <- data %>%
-#  mutate(saint = ifelse(BFDR <= 0.05 & AvgP >= 0.7, TRUE, FALSE)) %>%
-#  right_join(all.data1, by = c("Bait", "Prey")) %>%
-#  select(Bait.Gene.Name, Prey.Gene.Name, saint, compPASS, in_BioGRID, is_Bait)
+cytoscape <- data %>%
+  mutate(saint = ifelse(BFDR <= 0.05 & AvgP >= 0.7, TRUE, FALSE)) %>%
+  right_join(all.data1, by = c("Bait", "Prey")) %>%
+  select(Bait.Gene.Name, Prey.Gene.Name, saint, compPASS, in_BioGRID, is_Bait)
 
-#cytoscape <- cytoscape %>%
-#  dplyr::filter(grepl('CLK3|CLK4|DYRK2|LMTK2|PIP5K1A|PRPF4B|RIOK1|STK19|STK17A', Bait.Gene.Name))
+cytoscape <- cytoscape %>%
+  dplyr::filter(grepl('CLK3|CLK4|DYRK2|LMTK2|PIP5K1A|PRPF4B|RIOK1|STK19|STK17A', Bait.Gene.Name))
 
 
-#Write file with filtered experiments, only Dark kinases
-#write_csv(cytoscape, 'output/Animated_cytoscape_poster.csv')
+# Write file with filtered experiments, only Dark kinases
+write_csv(cytoscape, 'output/Animated_cytoscape_poster.csv')
