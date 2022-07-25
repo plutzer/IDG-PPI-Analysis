@@ -298,7 +298,8 @@ for (mybait in baits) {
 
 
 nodes_combined = data %>% select(Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
-edges_combined = select(data,Experiment.ID,Prey.Gene.Name,in.BioGRID,in.BioGRID.MV,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+#edges_combined = select(data,Experiment.ID,Prey.Gene.Name,in.BioGRID,in.BioGRID.MV,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+# Commented out the combined edges... that shit was too big
 
 # Add the interaction column
 edges_combined$Interaction = "Strep APMS"
