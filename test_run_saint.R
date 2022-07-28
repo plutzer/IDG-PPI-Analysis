@@ -11,8 +11,6 @@ library(DarkKinaseTools)
 library(org.Hs.eg.db)
 #source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/Cytoscape.R")
 
-
-
 # Set paths
 SAINT_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/build/SAINTexpress-spc.exe'
 ED_path = 'C:/Users/plutzer/Work/IDG_pipeline/ED_DB.csv'
@@ -64,14 +62,10 @@ if(!dir.exists(paste(output_dir, '/Prey_Prey_Interactions/',sep=''))){
 select <- get(x="select", pos = "package:dplyr")
 
 
-# # This needs to be updated because I don't have this file...
 uniprot.mapping <- read_tsv(uniprot_map_path)
 
 # List of unique baits
 unique.Baits <- unique(merge$Bait)
-
-################################################################################
-#Entrez GeneID
 
 #Prey
 # extract Prey Uniprot Identifier
@@ -124,7 +118,6 @@ for(i in 1:length(go)) {
     rename(goNames = go[i])
 }
 
-
 #Merge GO Slim in Single Column
 data$GO.Slim <- apply(data, 1, 
   function(x) {
@@ -134,15 +127,6 @@ data$GO.Slim <- apply(data, 1,
           collapse = ";")
   }
 )
-
-#Priority GO Column: Either matched with bait or from uniprot
-#data$GO.Priority <- apply(data, 1, function(x)){
-#}
-
-# ?? bait.data.filter <- data.filter %>% filter(Bait == mybait)
-# ?? num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(bait.data.filter))
-# ?? all.data.filter <- all.data.filter %>% add_row(bait.data.filter[1:num.interactors, ])
-
 
 #Annotate Dark Kinases
 data <- left_join(data, all_kinases, by=c("First.Prey.GeneID" = "entrez_id"))
@@ -163,46 +147,7 @@ baitTable <- data %>%
 data <- left_join(data, baitTable, by="Bait")
 
 ################################################################################
-#BioGrid Annotations
 
-#Biogrid read  in
-# biogrid <- read.csv(file = biogrid_path, header = TRUE, sep="\t", stringsAsFactors = FALSE) %>%
-#   filter(Organism.ID.Interactor.A == 9606 & Organism.ID.Interactor.B == 9606)
-# 
-# #Is In BioGrid (T/F)
-# geneList = as.vector(data$`First.Prey.GeneID`[!is.na(data$`First.Prey.GeneID`)])
-# 
-# interactions <- biogrid %>%
-#   # select columns needed from bioGrid
-#   select(Entrez.Gene.Interactor.A, Entrez.Gene.Interactor.B) %>%
-#   # only take proteins with geneIDs
-#   filter(Entrez.Gene.Interactor.A != "-" & Entrez.Gene.Interactor.B != "-") %>% 
-#   # no self interactions
-#   filter(Entrez.Gene.Interactor.A != Entrez.Gene.Interactor.B) %>%
-#   # always putting the smaller geneID first
-#   mutate(interactor_min = pmin(as.numeric(Entrez.Gene.Interactor.A), as.numeric(Entrez.Gene.Interactor.B)), 
-#          interactor_max = pmax(as.numeric(Entrez.Gene.Interactor.A), as.numeric(Entrez.Gene.Interactor.B))) %>%
-#   select(interactor_min, interactor_max) %>%
-#   unique()
-
-#CHANGE AS.NUMERIC AND PUT IT ABOVE SO IT GOES FASTER - this doesn't work
-# data$in_BioGRID <- apply(data, 1, function(x) {
-#   nrow(filter(interactions, (`interactor_min` == as.numeric(x[["Prey.GeneID"]]) & `interactor_max` == as.numeric(x[["Bait.GeneID"]])) |
-#                 (`interactor_max` == as.numeric(x[["Prey.GeneID"]]) & `interactor_min` == as.numeric(x[["Bait.GeneID"]]))
-#   )) > 0
-# })
-
-# This solution works and is much faster
-# bait_prey_pairs = transpose(as.list(data[, c("Bait.GeneID","Prey.GeneID")]))
-# in_BioGRID = lapply(bait_prey_pairs, FUN=function(x){(any(interactions$interactor_min==as.numeric(x$Bait.GeneID) & interactions$interactor_max==as.numeric(x$Prey.GeneID)) |
-#                                                                   any(interactions$interactor_max==as.numeric(x$Bait.GeneID) & interactions$interactor_min==as.numeric(x$Prey.GeneID)))})
-# data$in_BioGRID = unlist(in_BioGRID)
-
-
-####################################
-####################################
-####################################
-####################################
 # New biogrid solution
 
 all_biogrid = read.csv(file = biogrid_all_path, header = TRUE, sep="\t", stringsAsFactors = FALSE) %>%
@@ -223,9 +168,10 @@ for (pair in bait_prey_pairs) {
   mv = any(mv_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Bait.GeneID) & mv_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Prey.GeneID)) |
       any(mv_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Bait.GeneID) & mv_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Prey.GeneID))
   entries = filter(all_biogrid,
-                   any(all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Prey.GeneID)) |
-                    any(all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Prey.GeneID))
+                   (all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Prey.GeneID)) |
+                    (all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Prey.GeneID))
                    )
+  print(length(entries[[1]]))
   if (length(entries[[1]]) >= 1) {
     all = TRUE
     biogrid_evidence_weight = length(entries[[1]])
@@ -247,8 +193,10 @@ proc.time() - ptm
 
 data = cbind(data,biogrid_info)
 ####################################
-## This is in the wrong spot it seems
-write_csv(data.filter, paste(output_dir,"Annotated_Merge_Saint_filter.csv",sep=''))
+
+
+# For starting here without running the whole code...
+# data = read.csv(paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep = ''))
 
 ################################################################################
 #Filter 
@@ -256,10 +204,28 @@ data.filter <- filter(data, BFDR <= 0.05, AvgP >= 0.7)
 
 data.filter.comp <- arrange(data.filter, desc(WD))
 
+## This is in the wrong spot it seems
+write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep=''))
+
 # Prey-Prey
 #Create separate data tables for prey-prey interactions
 
 baits <- unique((data.filter.comp %>% filter(!is.na(BaitGene), is_Bait == TRUE, BaitGene == PreyGene))$Bait)
+
+geneList = as.vector(data$`First.Prey.GeneID`[!is.na(data$`First.Prey.GeneID`)])
+
+interactions <- mv_biogrid %>%
+  # select columns needed from bioGrid
+  select(Entrez.Gene.Interactor.A, Entrez.Gene.Interactor.B) %>%
+  # only take proteins with geneIDs
+  filter(Entrez.Gene.Interactor.A != "-" & Entrez.Gene.Interactor.B != "-") %>% 
+  # no self interactions
+  filter(Entrez.Gene.Interactor.A != Entrez.Gene.Interactor.B) %>%
+  # always putting the smaller geneID first
+  mutate(interactor_min = pmin(as.numeric(Entrez.Gene.Interactor.A), as.numeric(Entrez.Gene.Interactor.B)), 
+         interactor_max = pmax(as.numeric(Entrez.Gene.Interactor.A), as.numeric(Entrez.Gene.Interactor.B))) %>%
+  select(interactor_min, interactor_max) %>%
+  unique()
 
 for (mybait in baits) {
   
@@ -296,9 +262,8 @@ for (mybait in baits) {
   write_csv(prey.prey.final, paste(output_dir,"/Prey_Prey_Interactions/",unique(bait.data.filter$Bait.Gene.Name),"_",mybait,".csv",sep=""))
 }
 
-
-nodes_combined = data %>% select(Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
-#edges_combined = select(data,Experiment.ID,Prey.Gene.Name,in.BioGRID,in.BioGRID.MV,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+nodes_combined = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
+edges_combined = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,in.BioGRID.MV,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
 # Commented out the combined edges... that shit was too big
 
 # Add the interaction column
@@ -307,7 +272,7 @@ edges_combined$Interaction = "Strep APMS"
 dir.create(paste(output_dir,"/Cytoscape_Outputs",sep=''))
 
 write_csv(nodes_combined, paste(output_dir,"/Cytoscape_Outputs/Combined_nodes.csv",sep=''))
-write_csv(edges_combined, paste(output_dir,"/Cytoscape_Outputs/Combined_edges.csv",sep=''))
+#write_csv(edges_combined, paste(output_dir,"/Cytoscape_Outputs/Combined_edges.csv",sep=''))
 
 for (bait in unique(data$Bait.Gene.Name)) {
   dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''))
@@ -318,22 +283,3 @@ for (bait in unique(data$Bait.Gene.Name)) {
     filter(Bait.Gene.Name == bait) %>%
     write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges.csv",sep=''))
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
