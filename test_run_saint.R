@@ -171,7 +171,6 @@ for (pair in bait_prey_pairs) {
                    (all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Prey.GeneID)) |
                     (all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Prey.GeneID))
                    )
-  print(length(entries[[1]]))
   if (length(entries[[1]]) >= 1) {
     all = TRUE
     biogrid_evidence_weight = length(entries[[1]])
