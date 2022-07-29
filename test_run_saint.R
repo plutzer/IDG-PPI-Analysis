@@ -219,7 +219,7 @@ interactions <- mv_biogrid %>%
   unique()
 
 nodes_combined = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
-edges_combined = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,in.BioGRID.MV,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+edges_combined = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
 
 # Add the interaction column
 edges_combined$Interaction = "Strep APMS"
