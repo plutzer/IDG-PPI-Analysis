@@ -49,15 +49,6 @@ merge = left_join(as.data.frame.matrix(comp_out), saint, by = c("Experiment.ID" 
 
 write_csv(merge, paste(output_dir,'/Merge_CompPASS_SAINT.csv',sep=''))
 
-# Smaranda's Annotate Script
-
-# Create Prey-Prey Directory
-if(!dir.exists(paste(output_dir, '/Prey_Prey_Interactions/',sep=''))){
-  dir.create(paste(output_dir, '/Prey_Prey_Interactions/',sep=''))
-} else {
-  FALSE
-}
-
 # I have absolutely no idea what this is supposed to do...
 select <- get(x="select", pos = "package:dplyr")
 
@@ -148,8 +139,7 @@ data <- left_join(data, baitTable, by="Bait")
 
 ################################################################################
 
-# New biogrid solution
-
+# Newest biogrid solution
 all_biogrid = read.csv(file = biogrid_all_path, header = TRUE, sep="\t", stringsAsFactors = FALSE) %>%
   filter(Organism.ID.Interactor.A == 9606 & Organism.ID.Interactor.B == 9606) %>%
   filter(Experimental.System.Type == "physical")
@@ -157,54 +147,56 @@ all_biogrid = read.csv(file = biogrid_all_path, header = TRUE, sep="\t", strings
 mv_biogrid = read.csv(file = biogrid_all_path, header = TRUE, sep="\t", stringsAsFactors = FALSE) %>%
   filter(Organism.ID.Interactor.A == 9606 & Organism.ID.Interactor.B == 9606)
 
-bait_prey_pairs = transpose(as.list(data[, c("Bait.GeneID","Prey.GeneID")]))
+## Need to mirror the biogrid files
+biogrid_mirror = all_biogrid
+biogrid_mirror$Entrez.Gene.Interactor.A = all_biogrid$Entrez.Gene.Interactor.B
+biogrid_mirror$Entrez.Gene.Interactor.B = all_biogrid$Entrez.Gene.Interactor.A
+all_biogrid = rbind(all_biogrid,biogrid_mirror)
 
-biogrid_info = data.frame(matrix(ncol = 6, nrow = 0))
-colnames(biogrid_info) = c("in.BioGRID","in.BioGRID.MV","Evidence.Weight","Experimental.Systems","Authors","Publications")
-print(paste("Total length:",length(bait_prey_pairs)))
-n = 0
-ptm <- proc.time()
-for (pair in bait_prey_pairs) {
-  mv = any(mv_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Bait.GeneID) & mv_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Prey.GeneID)) |
-      any(mv_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Bait.GeneID) & mv_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Prey.GeneID))
-  entries = filter(all_biogrid,
-                   (all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Prey.GeneID)) |
-                    (all_biogrid$Entrez.Gene.Interactor.B==as.numeric(pair$Bait.GeneID) & all_biogrid$Entrez.Gene.Interactor.A==as.numeric(pair$Prey.GeneID))
-                   )
-  if (length(entries[[1]]) >= 1) {
-    all = TRUE
-    biogrid_evidence_weight = length(entries[[1]])
-    exp_systems = paste(entries$Experimental.System,collapse = ";")
-    authors = paste(entries$Author,collapse = ";")
-    publications = paste(entries$Publication.Source,collapse = ";")
-  }
-  else {
-    all = FALSE
-    biogrid_evidence_weight = 0
-    exp_systems = "-"
-    authors = "-"
-    publications = "-"
-  }
-  biogrid_info[nrow(biogrid_info) + 1,] = c(all,mv,biogrid_evidence_weight,exp_systems,authors,publications)
-}
-proc.time() - ptm
+mv_mirror = mv_biogrid
+mv_mirror$Entrez.Gene.Interactor.A = mv_biogrid$Entrez.Gene.Interactor.B
+mv_mirror$Entrez.Gene.Interactor.B = mv_biogrid$Entrez.Gene.Interactor.A
+mv_biogrid = rbind(mv_biogrid,mv_mirror)
+# Make this column to merge in
+mv_biogrid$multivalidated = TRUE
+# Simplify the mv_biogrid data before merge
+mv_biogrid = mv_biogrid %>%
+  group_by(Entrez.Gene.Interactor.A,Entrez.Gene.Interactor.B) %>%
+  summarize(Multivalidated = any(multivalidated),.groups = "drop")
 
+# Merge
+all_biogrid = left_join(all_biogrid,mv_biogrid,by = c("Entrez.Gene.Interactor.A","Entrez.Gene.Interactor.B"))
 
-data = cbind(data,biogrid_info)
-####################################
+# Group and summarize
+summ_biogrid = all_biogrid %>%
+  group_by(Entrez.Gene.Interactor.A,Entrez.Gene.Interactor.B) %>%
+  summarize(in.BioGRID = (length(Entrez.Gene.Interactor.A)>=1),
+            Evidence.Weight = length(Entrez.Gene.Interactor.A),
+            Experimental.Systems = paste(Experimental.System,collapse = ';'),
+            Authors = paste(Author,collapse = ';'),
+            Publications = paste(Publication.Source, collapse = ';'),
+            Entrez.Gene.Interactor.A = Entrez.Gene.Interactor.A[[1]],
+            Entrez.Gene.Interactor.B = Entrez.Gene.Interactor.B[[1]],
+            Multivalidated = any(Multivalidated),
+            .groups="drop"
+  )
 
-
-# For starting here without running the whole code...
-# data = read.csv(paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep = ''))
+data = left_join(data,summ_biogrid, by=c('Bait.GeneID'='Entrez.Gene.Interactor.A','Prey.GeneID'='Entrez.Gene.Interactor.B'))
 
 ################################################################################
-#Filter 
-data.filter <- filter(data, BFDR <= 0.05, AvgP >= 0.7)
+# Filter out control baits using ED file
+test_baits = read.csv(ED_path, header = TRUE, stringsAsFactors = FALSE) %>%
+  filter(Type == 'T')
 
+#Filter 
+data.filter <- filter(data, BFDR <= 0.05, AvgP >= 0.7) %>%
+  filter(Experiment.ID %in% test_baits)
+
+# Filter for comppass
 data.filter.comp <- arrange(data.filter, desc(WD))
 
 ## This is in the wrong spot it seems
-write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep=''))
+write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep='',na=""))
 
 # Prey-Prey
 #Create separate data tables for prey-prey interactions
@@ -225,6 +217,17 @@ interactions <- mv_biogrid %>%
          interactor_max = pmax(as.numeric(Entrez.Gene.Interactor.A), as.numeric(Entrez.Gene.Interactor.B))) %>%
   select(interactor_min, interactor_max) %>%
   unique()
+
+nodes_combined = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
+edges_combined = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,in.BioGRID.MV,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+
+# Add the interaction column
+edges_combined$Interaction = "Strep APMS"
+
+dir.create(paste(output_dir,"/Cytoscape_Outputs",sep=''))
+
+write_csv(nodes_combined, paste(output_dir,"/Cytoscape_Outputs/Combined_nodes.csv",sep=''))
+
 
 for (mybait in baits) {
   
@@ -256,9 +259,44 @@ for (mybait in baits) {
   if(nrow(prey.prey.final) != 0){
     prey.prey.final$Source <- 'Biogrid'
   }
+  bait = mybait
+  
+  dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''))
+  nodes_combined %>%
+    filter(Bait.Gene.Name == bait) %>%
+    write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes.csv",sep=''))
+  edges_bait = edges_combined %>%
+    filter(Bait.Gene.Name == bait)
+  
+  # Merge the prey-prey information with the nodes
+  prey.prey.final$Prey.1.Entrez.ID = as.character(prey.prey.final$Prey.1.Entrez.ID)
+  prey.prey.final$Prey.2.Entrez.ID = as.character(prey.prey.final$Prey.2.Entrez.ID)
+  
+  
+  prey.prey.final.biogrid = left_join(prey.prey.final,summ_biogrid, by=c('Prey.1.Entrez.ID'='Entrez.Gene.Interactor.A','Prey.2.Entrez.ID'='Entrez.Gene.Interactor.B'))
+  
+  # Add the relevant columns to the edges dataframe
+  prey.prey.select = select(prey.prey.final.biogrid,Prey.1.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD.1,Prey.2.Gene.Name,Source,WD.2)
+  
+  edges_bait$X = NULL
+  
+  prey.prey.select$Experiment.ID = edges_bait$Experiment.ID[[1]] # These shouldn't change so just first is fine
+  
+  # Put Experiment ID at the start of the dataframe
+  prey.prey.select = prey.prey.select[, c(12,1:11)]
+  
+  # Rename the columns for compatibility...
+  colnames(prey.prey.select) = colnames(edges_bait)
+  
+  # Combine and add the WD2 column
+  total_edges = bind_rows(edges_bait,prey.prey.select)
+  colnames(total_edges)[[12]] = "WD2"
+  
+  
+  write.csv(total_edges, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges.csv",sep=''))
   
   #write individual csv files for each bait
-  write_csv(prey.prey.final, paste(output_dir,"/Prey_Prey_Interactions/",unique(bait.data.filter$Bait.Gene.Name),"_",mybait,".csv",sep=""))
+  #write_csv(prey.prey.final, paste(output_dir,"/Prey_Prey_Interactions/",unique(bait.data.filter$Bait.Gene.Name),"_",mybait,".csv",sep=""))
 }
 
 nodes_combined = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
