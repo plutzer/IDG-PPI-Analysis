@@ -42,6 +42,8 @@ to_comp = read.csv(file = filename, header = TRUE, sep = "\t", stringsAsFactors 
 comp_out = comppass(to_comp, stats = NULL, norm.factor = 0.98)
 write.table(comp_out, file=paste(output_dir,'/compPASS.csv',sep=''), sep = "\t")
 
+
+
 ## 
 
 # Smaranda's Merge script
