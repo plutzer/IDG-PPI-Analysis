@@ -3,8 +3,14 @@ library(dplyr)
 
 to_comp_test = read.csv(file = "C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/to_CompPASS.csv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
-power <- function(x, y) sign(x) * abs(x)^y
 
+cutoff <- function(num,threshold) {
+  if (num >= threshold) {
+    threshold
+  } else {
+    num
+  }
+}
 
 compute_wds = function(data,quant_col="Spectral.Count",num_reps=2) {
   # Data should have Biat, Prey, Replicate, and Spectral Counts columns
@@ -16,19 +22,16 @@ compute_wds = function(data,quant_col="Spectral.Count",num_reps=2) {
   data = data %>% group_by(Bait,Prey) %>% summarize(Quantification = sum(.data[[quant_col]])/num_reps,.groups="drop")
   
   # compute f
-  data$f = as.integer(data$Quantification >= 1)
+  data$f = unlist(lapply(data$Quantification,FUN=cutoff,threshold=1))
   
   # Prey-level calculations
   p = data %>% count(Bait,Prey)
   
-  prey_stats = data %>% group_by(Prey) %>% summarise(Gamma = (k/sum(f)),
+  prey_stats = data %>% group_by(Prey) %>% summarize(Gamma = (k/sum(f)),
                                                      Xbar = sum(Quantification)/k,
                                                      stdev = sd(Quantification)) %>% ungroup() %>%
                         mutate(Omega = stdev/Xbar)
 
-  # prey_stats$Xbar = (data %>% group_by(Prey) %>% summarise(xbar = sum(.data[[quant_col]])/k))$xbar
-  # prey_stats$Omega = ((data %>% group_by(Prey) %>% summarise(stdev = sd(.data[[quant_col]])))$stdev)/prey_stats$Xbar
-  
   # WD score calculation  
   data = data %>% left_join(prey_stats,by="Prey") %>% left_join(p,by=c("Bait","Prey"))
   
