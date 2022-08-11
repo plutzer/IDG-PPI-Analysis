@@ -3,43 +3,75 @@ library(dplyr)
 
 to_comp_test = read.csv(file = "C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/to_CompPASS.csv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
+data = to_comp_test
 
-cutoff <- function(num,threshold) {
-  if (num >= threshold) {
-    threshold
-  } else {
-    num
-  }
-}
+quant_col="Spectral.Count"
 
-compute_wds = function(data,quant_col="Spectral.Count",num_reps=2) {
-  # Data should have Biat, Prey, Replicate, and Spectral Counts columns
-  
-  # First define K: the number of experimental conditions
-  k = length(unique(data[,c("Bait")])[[1]])*num_reps
+k = length((data %>% count(Experiment.ID))[[1]]) # Correct
 
-  # Need to pre-process the quantification to be the average of the reps (since some reps will be missing)
-  data = data %>% group_by(Bait,Prey) %>% summarize(Quantification = sum(.data[[quant_col]])/num_reps,.groups="drop")
-  
-  # compute f
-  data$f = unlist(lapply(data$Quantification,FUN=cutoff,threshold=1))
-  
-  # Prey-level calculations
-  p = data %>% count(Bait,Prey)
-  
-  prey_stats = data %>% group_by(Prey) %>% summarize(Gamma = (k/sum(f)),
-                                                     Xbar = sum(Quantification)/k,
-                                                     stdev = sd(Quantification)) %>% ungroup() %>%
-                        mutate(Omega = stdev/Xbar)
+preystats = data %>% group_by(Prey) %>% summarize(stdev = sd(.data[[quant_col]]),
+                                                  Xbar = mean(.data[[quant_col]]))
 
-  # WD score calculation  
-  data = data %>% left_join(prey_stats,by="Prey") %>% left_join(p,by=c("Bait","Prey"))
-  
-  data$WD = sqrt(`^`((data$Gamma*data$Omega),data$n)*(data$Quantification))
-  
-  #mutate(WD = sqrt((`^`((Gamma*Omega),p))*(Quantification)))
-  data
-}
+combostats = data %>% group_by(Bait,Prey,Experiment.ID) %>% summarize(AvgSpec = mean(.data[[quant_col]]),
+                                                                      p = n())
+
+combostats$f = as.integer(combostats$AvgSpec >= 1)
+
+tallys = combostats %>% group_by(Prey) %>% summarize(total_ints = sum(f))
+
+stats = combostats %>% left_join(preystats,by=c("Prey")) %>% left_join(tallys,by=c("Prey"))
+
+stats = stats %>% mutate(WD = sqrt(`^`((k/total_ints)*(stdev/Xbar),p)*AvgSpec))
+
+# Test merging to see if they agree...
+comp_out = comppass(to_comp_test,stats = NULL,norm.factor = 0.98)
+
+merge = left_join(comp_out,stats,by=c("Bait","Prey","Experiment.ID"))
+
+
+
+
+
+
+
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+# Data should have Biat, Prey, Replicate, and Spectral Counts columns
+
+# First define K: the number of experimental conditions
+k = length((data %>% count(Experiment.ID))[[1]]) # Correct
+#k = length(unique(data[,c("Bait")])[[1]])*num_reps
+
+p = data %>% count(Bait,Prey,Experiment.ID) # Correct
+
+data = data %>% left_join(p,by=c("Bait","Prey","Experiment.ID"))
+
+# Need to pre-process the quantification to be the average of the reps (since some reps will be missing)
+quantdata = data %>% group_by(Bait,Prey,Experiment.ID) %>% summarize(Quantification = mean(.data[[quant_col]]),.groups="drop")
+
+data = data %>% left_join(quantdata,by=c("Bait","Prey","Experiment.ID"))
+
+# compute f
+data$f = as.integer(data$Quantification >= 1) #Correct
+
+data = data %>% left_join(reps_avg_data,by=c("Bait","Prey","Experiment.ID"))
+
+prey_stats = data %>% group_by(Prey) %>% summarize(Gamma = (k/sum(f)),
+                                                   Xbar = sum(.data[[quant_col]])/k,
+                                                   stdev = sd(.data[[quant_col]])) %>% ungroup() %>%
+  mutate(Omega = stdev/Xbar)
+
+# WD score calculation  
+data = data %>% left_join(prey_stats,by="Prey") %>% left_join(p,by=c("Bait","Prey"))
+
+data$WD = sqrt(`^`((data$Gamma*data$Omega),data$n)*(data$Quantification))
+
+#mutate(WD = sqrt((`^`((Gamma*Omega),p))*(Quantification)))
+
 
 
 ###############################
@@ -47,24 +79,11 @@ compute_wds = function(data,quant_col="Spectral.Count",num_reps=2) {
 
 comp_out = comppass(to_comp_test,stats = NULL,norm.factor = 0.98)
 
-my_out = compute_wds(to_comp_test)
+my_out = data
 
 
 
 # Testing to see if the outputs agree
-merged = full_join(comp_out,my_out,by=c("Bait","Prey"))
-# There's some seriously funky shit goin on here
-# WD scores don't agree
+merged = left_join(comp_out,(my_out),by=c("Bait","Prey"))
 
-# The length of the output is different. The comppass command seems to retain more rows than unique Bait-Prey combos
-print(paste("Length of my output: ",length(my_out[[1]])))
-print(paste("Length of comppass output: ",length(comp_out[[1]])))
-print(paste("Length of unique Bait-Prey combos: "),length(merged %>% count(Bait,Prey)[[1]]))
-
-# What bait-prey combos are in the default that are not in my implementation
-
-
-raw = to_comp_test %>% subset(select = -Prey.Name)
-
-write.table(raw,file="C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/raw_to_comp.tsv",sep="\t")
 
