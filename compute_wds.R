@@ -7,17 +7,21 @@ data = to_comp_test
 
 quant_col="Spectral.Count"
 
-k = length((data %>% count(Experiment.ID))[[1]]) # Correct
+k = length((data %>% count(Experiment.ID))[[1]]) # Total # of different experimental conditions
 
-preystats = data %>% group_by(Prey) %>% summarize(stdev = sd(.data[[quant_col]]),
-                                                  Xbar = mean(.data[[quant_col]]))
+preystats = data %>% group_by(Prey) %>% filter(Bait != Prey) %>% summarize(stdev = sd(.data[[quant_col]]),
+                                                  Xbar = sum(.data[[quant_col]])/k)
 
 combostats = data %>% group_by(Bait,Prey,Experiment.ID) %>% summarize(AvgSpec = mean(.data[[quant_col]]),
-                                                                      p = n())
+                                                                      p = n(),
+                                                                      .groups="drop")
 
 combostats$f = as.integer(combostats$AvgSpec >= 1)
 
-tallys = combostats %>% group_by(Prey) %>% summarize(total_ints = sum(f))
+tallys = combostats %>% group_by(Prey) %>% summarize(total_ints = sum(f),
+                                                     avg_stdev = sd(AvgSpec),
+                                                     avg_Xbar = mean(AvgSpec),
+                                                     .groups="drop")
 
 stats = combostats %>% left_join(preystats,by=c("Prey")) %>% left_join(tallys,by=c("Prey"))
 
