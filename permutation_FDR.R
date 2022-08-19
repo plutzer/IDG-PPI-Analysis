@@ -1,3 +1,7 @@
+#source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/compPASS.R")
+
+library(cRomppass)
+
 to_comp_test = read.csv(file = "C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/to_CompPASS.csv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
 start = Sys.time()

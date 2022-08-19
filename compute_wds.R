@@ -3,6 +3,60 @@ library(dplyr)
 
 to_comp_test = read.csv(file = "C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/to_CompPASS.csv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
+comp_out = comppass(to_comp_test,stats = NULL,norm.factor = 0.98)
+
+resample_AvePSM = function(to_comp,comp_out,n.experiments) {
+  
+  perm = to_comp[order(to_comp_test$Bait),]
+  perm$new_spec = perm %>% group_by(Bait) %>% group_map(~ sample(.x$Spectral.Count,replace = TRUE)) %>% unlist()
+  
+  stats = perm %>%
+    group_by(Experiment.ID, Prey, Replicate) %>%
+    summarize(Bait = unique(Bait),
+              Spectral.Count = max(Spectral.Count)) %>%
+    ungroup() %>%
+    group_by(Experiment.ID, Prey) %>%
+    summarize(Bait = unique(Bait),
+              AvePSM = mean(Spectral.Count),
+              N.Saw = length(which(Spectral.Count > 0))) %>%
+    ungroup() %>%
+    as.data.frame()
+  
+  # Need to add Little N to stats df
+  little_n_entries = comp_out %>% group_by(Prey) %>% summarise(Little.N = unique(Little.N))
+  
+  stats = stats %>% left_join(little_n_entries,by="Prey")
+  
+  preystats = stats %>% filter(Bait != Prey) %>% group_by(Prey) %>%  summarize(
+    prey.mean = sum(AvePSM)/n.experiments,
+    n.experiments.without.prey = n.experiments - Little.N,
+    prey.sum.squared.err <- sum(raise_to_power(AvePSM - prey.mean, 2)) +
+      (raise_to_power(prey.mean, 2) * n.experiments.without.prey)
+    #prey.sd <- sqrt(prey.sum.squared.err / (n.experiments - 1))
+  )
+  stats
+}
+
+res = resample_AvePSM(to_comp_test,comp_out,n.experiments = length((to_comp_test %>% count(Experiment.ID))[[1]]))
+
+n.experiments = length((to_comp_test %>% count(Experiment.ID))[[1]])
+
+teststats = res %>% filter(Bait != Prey) %>% group_by(Prey) %>%  summarize(
+  prey.mean = sum(AvePSM)/n.experiments,
+  n.experiments.without.prey = n.experiments - Little.N,
+  prey.sum.squared.err <- sum(raise_to_power(AvePSM - prey.mean, 2)) +
+    (raise_to_power(prey.mean, 2) * n.experiments.without.prey),.groups = NULL) %>%
+  ungroup()
+
+
+
+
+
+
+
+
+
+
 data = to_comp_test
 
 quant_col="Spectral.Count"
