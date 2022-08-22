@@ -66,6 +66,7 @@ calc.z.and.wd <- function(row.df, stats, n.experiments) {
     
     z <- (row.df$AvePSM - prey.mean) / prey.sd
     
+    print(paste(n.experiments))
     wd.inner.term <- (n.experiments / n.experiments.with.prey) *
       (prey.sd / prey.mean)
     wd <- sqrt(row.df$AvePSM * raise_to_power(wd.inner.term, row.df$N.Saw))
