@@ -3,9 +3,9 @@ library(cRomppass)
 library(magrittr)
 
 
-to_comp_test = read.csv(file = "C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/to_CompPASS.csv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+#to_comp_test = read.csv(file = "C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int/to_CompPASS.csv", header = TRUE, sep = "\t", stringsAsFactors = FALSE)
 
-comp_out = comppass(to_comp_test,stats = NULL,norm.factor = 0.98)
+#comp_out = comppass(to_comp_test,stats = NULL,norm.factor = 0.98)
 
 normalize.wd <- function(xs, norm.factor) {
   xs.f <- Filter(function(x) { ! (is.nan(x) || is.na(x)) }, xs)
@@ -75,10 +75,10 @@ resample_AvePSM = function(to_comp,comp_out,n.experiments,norm.factor = 0.98,suf
   comp_out
 }
 
-# Test and time...
-start = Sys.time()
-res = resample_AvePSM(to_comp_test,comp_out,n.experiments = length((to_comp_test %>% count(Experiment.ID))[[1]]),suffix = 1)
-end = Sys.time()
-start-end
+# # Test and time...
+# start = Sys.time()
+# res = resample_AvePSM(to_comp_test,comp_out,n.experiments = length((to_comp_test %>% count(Experiment.ID))[[1]]),suffix = 1)
+# end = Sys.time()
+# start-end
 
 

@@ -9,6 +9,7 @@ library(cRomppass)
 library(tidyverse)
 library(DarkKinaseTools)
 library(org.Hs.eg.db)
+source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/compute_wds.R")
 #source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/Cytoscape.R")
 
 # Set paths
@@ -42,6 +43,7 @@ to_comp = read.csv(file = filename, header = TRUE, sep = "\t", stringsAsFactors 
 comp_out = comppass(to_comp, stats = NULL, norm.factor = 0.98)
 write.table(comp_out, file=paste(output_dir,'/compPASS.csv',sep=''), sep = "\t")
 
+###  Comppass FDR goes here
 
 
 ## 
