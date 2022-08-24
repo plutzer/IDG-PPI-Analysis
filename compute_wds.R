@@ -15,7 +15,7 @@ normalize.wd <- function(xs, norm.factor) {
 resample_AvePSM = function(to_comp,comp_out,n.experiments,norm.factor = 0.98,suffix = "",test = TRUE) {
   # Runs in about 7 seconds
   
-  perm = to_comp[order(to_comp_test$Bait),]
+  perm = to_comp[order(to_comp$Bait),]
   perm$new_spec = perm %>% group_by(Bait) %>% group_map(~ sample(.x$Spectral.Count,replace = TRUE)) %>% unlist()
   
   # If this is not a test, change the spectral counts to be the permutation
@@ -68,7 +68,7 @@ resample_AvePSM = function(to_comp,comp_out,n.experiments,norm.factor = 0.98,suf
   stats$WD = sqrt(stats$AvePSM*raise_to_power(stats$inner_term, stats$N.Saw))
   
   stats$WD = normalize.wd(stats$WD, norm.factor) 
-  stats = stats %>% select(Experiment.ID,Prey,prey.mean,prey.sd,AvePSM,WD,N.Saw,Little.N) %>% rename_with(test, .fn = ~paste(.,suffix,sep="_"), .cols = c(AvePSM,WD,prey.mean,prey.sd,N.Saw,Little.N))
+  stats = stats %>% dplyr::select(Experiment.ID,Prey,AvePSM,WD) %>% rename_with(test, .fn = ~paste(.,suffix,sep="_"), .cols = c(AvePSM,WD))
   
   comp_out = merge(comp_out,stats,by=c("Experiment.ID","Prey"))
   

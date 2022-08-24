@@ -9,17 +9,24 @@ library(cRomppass)
 library(tidyverse)
 library(DarkKinaseTools)
 library(org.Hs.eg.db)
+library(dplyr)
 source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/compute_wds.R")
 #source("C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/Cytoscape.R")
+
+# I have absolutely no idea what this is supposed to do...
+select <- get(x="select", pos = "package:dplyr")
 
 # Set paths
 SAINT_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/build/SAINTexpress-spc.exe'
 ED_path = 'C:/Users/plutzer/Work/IDG_pipeline/ED_DB.csv'
 PG_path = 'C:/Users/plutzer/Work/IDG_pipeline/proteinGroups.txt'
-output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int'
+output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_blank'
 uniprot_map_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/uniprot_mapping.tsv.zip'
 biogrid_mv_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/BIOGRID-MV-Physical-4.4.211.tab3.txt'
 biogrid_all_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer/BIOGRID-ALL-4.4.211.tab3.txt'
+
+
+resampling_iterations = 100
 
 setwd(output_dir)
 
@@ -44,6 +51,19 @@ comp_out = comppass(to_comp, stats = NULL, norm.factor = 0.98)
 write.table(comp_out, file=paste(output_dir,'/compPASS.csv',sep=''), sep = "\t")
 
 ###  Comppass FDR goes here
+print("Starting CompPASS resampling...")
+pb = txtProgressBar(min = 0, max = resampling_iterations, initial = 0) 
+comp_resample = resample_AvePSM(to_comp,comp_out,n.experiments = length((to_comp %>% count(Experiment.ID))[[1]]),suffix = "test",test=T)
+for (i in 1:resampling_iterations) { # Adjust number of iterations as needed
+  comp_resample = resample_AvePSM(to_comp,comp_resample,n.experiments = length((to_comp %>% count(Experiment.ID))[[1]]),suffix = as.character(i),test=F)
+  setTxtProgressBar(pb,i)
+}
+close(pb)
+write.table(comp_resample,file=paste(output_dir,'/resample_comp_out.csv',sep=''),sep="\t")
+
+wds = comp_resample %>% select(contains("WD_") & !contains("test"))
+
+comp_out$perm_fdrs = apply(as.array(1:length(comp_resample$WD)), MARGIN = 1, FUN = function(i) {sum(wds[i,]>comp_resample$WD[[i]])/resampling_iterations})
 
 
 ## 
@@ -54,9 +74,6 @@ saint <- read.csv(file=paste(output_dir,'/list.txt',sep=''), sep="\t")
 merge = left_join(as.data.frame.matrix(comp_out), saint, by = c("Experiment.ID" = "Bait", "Prey"))
 
 write_csv(merge, paste(output_dir,'/Merge_CompPASS_SAINT.csv',sep=''))
-
-# I have absolutely no idea what this is supposed to do...
-select <- get(x="select", pos = "package:dplyr")
 
 
 uniprot.mapping <- read_tsv(uniprot_map_path)
@@ -85,10 +102,10 @@ data <- separate(data, "First.Bait.Uniprot", c("Canonical.First.Bait.Uniprot"), 
 data <- left_join(data, uniprot.mapping, by=c("Canonical.First.Bait.Uniprot" = "UniProt"))
 
 #Move and rename columns
-data <- data[c(1:7, 32:38, 8:31)]
+data <- data[c(1:7, 32:39, 8:31)]
 data <- rename(data, c("Gene_Name.x" = "Prey.Gene.Name", "Gene_Synonym.x" = "Prey.Gene.Synonym", "GeneID.x" = "Prey.GeneID", "First_GeneID.x" = "First.Prey.GeneID", 
                        "Gene_Name.y" = "Bait.Gene.Name", "Gene_Synonym.y" = "Bait.Gene.Synonym", "GeneID.y" = "Bait.GeneID", "First_GeneID.y" = "First.Bait.GeneID"))
-data <- data[,c(1,12,13,2:4,14,15,8,9,5:7,10,11,16:38)]
+data <- data[,c(1,12,13,2:4,14,15,8,9,5:7,10,11,16:39)]
 
 ################################################################################
 
@@ -198,11 +215,15 @@ test_baits = read.csv(ED_path, header = TRUE, stringsAsFactors = FALSE) %>%
 data.filter <- filter(data, BFDR <= 0.05, AvgP >= 0.7) %>%
   filter(Experiment.ID %in% test_baits$Bait)
 
-# Filter for comppass
-data.filter.comp <- arrange(data.filter, desc(WD))
+data.testbaits = data %>% filter(Experiment.ID %in% test_baits$Bait)
 
-## This is in the wrong spot it seems
+# Sort by comppass scores
+data.filter.comp <- arrange(data.filter, desc(WD))
+data.testbaits.comp = arrange(data.testbaits, desc(WD))
+
+# Write these output files
 write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep='',na=""))
+write.csv(data.testbaits.comp, paste(output_dir,"/Annotated_Merge_Saint.csv",sep='',na=""))
 
 # Prey-Prey
 #Create separate data tables for prey-prey interactions
@@ -224,22 +245,27 @@ interactions <- mv_biogrid %>%
   select(interactor_min, interactor_max) %>%
   unique()
 
-nodes_combined = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
-edges_combined = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+nodes_combined = select(data.testbaits,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
+edges_combined = select(data.testbaits,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+nodes_combined_filtered = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
+edges_combined_filtered = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+
 # Commented out the combined edges... that shit was too big
 
 # Add the interaction column
 edges_combined$Interaction = "Strep APMS"
+edges_combined_filtered$Interaction = "Strep APMS"
 
 dir.create(paste(output_dir,"/Cytoscape_Outputs",sep=''))
 
 write_csv(nodes_combined, paste(output_dir,"/Cytoscape_Outputs/Combined_nodes.csv",sep=''))
+write_csv(nodes_combined_filtered, paste(output_dir,"/Cytoscape_Outputs/Combined_nodes_filtered.csv",sep=''))
 
 for (mybait in baits) {
   
   #mybait <- "P24941"
   
-  bait.data.filter <- data.filter.comp %>% filter(Bait == mybait)
+  bait.data.filter <- data.testbaits.comp %>% filter(Bait == mybait)
   num.interactors <- min(max(10, nrow(bait.data.filter)*0.05), nrow(data.filter.comp))
   bait.data.filter.comp <- bait.data.filter[1:num.interactors, ]
   # all.data.filter <- all.data.filter %>% add_row(bait.data.filter.comp)
@@ -252,12 +278,12 @@ for (mybait in baits) {
   
   #Left_joining table with prey 1 and adding Uniprot and Nice Prey name columns
   prey.prey.join <- left_join(prey.prey.inter, bait.data.filter.comp, by=c("Prey.1.Entrez.ID" = "Prey.GeneID"))%>%
-    select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Prey.Uniprot, Prey.Gene.Name, WD) %>%
+    select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Prey.Uniprot, Prey.Gene.Name, WD,perm_fdrs) %>%
     rename(c(Canonical.First.Prey.Uniprot = "Prey.1.Uniprot", Prey.Gene.Name = "Prey.1.Gene.Name", WD = "WD.1"))
   
   #Left_joining table with prey 2 and adding Uniprot and Nice Prey name columns
   prey.prey.final <- left_join(prey.prey.join, bait.data.filter.comp, by=c("Prey.2.Entrez.ID" = "Prey.GeneID")) %>%
-    select(Prey.1.Gene.Name, Prey.1.Uniprot, Prey.1.Entrez.ID, WD.1, Prey.Gene.Name, Canonical.First.Prey.Uniprot, Prey.2.Entrez.ID, WD) %>%
+    select(Prey.1.Gene.Name, Prey.1.Uniprot, Prey.1.Entrez.ID, WD.1, Prey.Gene.Name, Canonical.First.Prey.Uniprot, Prey.2.Entrez.ID, WD,perm_fdrs) %>%
     rename(c(Canonical.First.Prey.Uniprot = "Prey.2.Uniprot", Prey.Gene.Name = "Prey.2.Gene.Name", WD = "WD.2")) %>%
     unique()
   
@@ -281,11 +307,13 @@ for (mybait in baits) {
     
     print(bait)######
     
-    print("Test Bait")
     dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''))
     nodes_combined %>%
       filter(Bait.Gene.Name == bait) %>%
       write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes.csv",sep=''))
+    nodes_combined_filtered %>%
+      filter(Bait.Gene.Name == bait) %>%
+      write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes_filtered.csv",sep=''))
     edges_bait = edges_combined %>%
       filter(Bait.Gene.Name == bait)
     
@@ -297,7 +325,7 @@ for (mybait in baits) {
     prey.prey.final.biogrid = left_join(prey.prey.final,summ_biogrid, by=c('Prey.1.Entrez.ID'='Entrez.Gene.Interactor.A','Prey.2.Entrez.ID'='Entrez.Gene.Interactor.B'))
     
     # Add the relevant columns to the edges dataframe
-    prey.prey.select = select(prey.prey.final.biogrid,Prey.1.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD.1,Prey.2.Gene.Name,Source,WD.2)
+    prey.prey.select = select(prey.prey.final.biogrid,Prey.1.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD.1,Prey.2.Gene.Name,Source,WD.2,perm_fdrs)
     
     edges_bait$X = NULL
     
@@ -308,14 +336,14 @@ for (mybait in baits) {
       prey.prey.select$Experiment.ID = '-'
     }
     # Put Experiment ID at the start of the dataframe
-    prey.prey.select = prey.prey.select[, c(12,1:11)]
+    prey.prey.select = prey.prey.select[, c(13,1:12)]
     
     # Rename the columns for compatibility...
     colnames(prey.prey.select) = colnames(edges_bait)
     
     # Combine and add the WD2 column
     total_edges = bind_rows(edges_bait,prey.prey.select)
-    colnames(total_edges)[[12]] = "WD2"
+    colnames(total_edges)[[13]] = "WD2"
     
     
     write.csv(total_edges, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges.csv",sep=''))
