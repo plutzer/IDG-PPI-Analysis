@@ -222,8 +222,8 @@ data.filter.comp <- arrange(data.filter, desc(WD))
 data.testbaits.comp = arrange(data.testbaits, desc(WD))
 
 # Write these output files
-write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep='',na=""))
-write.csv(data.testbaits.comp, paste(output_dir,"/Annotated_Merge_Saint.csv",sep='',na=""))
+write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep='',na="",row.names=F))
+write.csv(data.testbaits.comp, paste(output_dir,"/Annotated_Merge_Saint.csv",sep='',na="",row.names=F))
 
 # Prey-Prey
 #Create separate data tables for prey-prey interactions
@@ -245,10 +245,10 @@ interactions <- mv_biogrid %>%
   select(interactor_min, interactor_max) %>%
   unique()
 
-nodes_combined = select(data.testbaits,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
-edges_combined = select(data.testbaits,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
-nodes_combined_filtered = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
-edges_combined_filtered = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,Bait.Gene.Name)
+nodes_combined = select(data.testbaits,Prey.Gene.Name,class,is_Bait,WD,perm_fdrs,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
+edges_combined = select(data.testbaits,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,perm_fdrs,Bait.Gene.Name)
+nodes_combined_filtered = select(data.filter,Prey.Gene.Name,class,is_Bait,WD,perm_fdrs,FoldChange,GO.Slim,Prey.Gene.Synonym,First.Bait.GeneID,First.Prey.GeneID,Bait.Gene.Name)
+edges_combined_filtered = select(data.filter,Experiment.ID,Prey.Gene.Name,in.BioGRID,Multivalidated,Evidence.Weight,Experimental.Systems,Authors,Publications,WD,perm_fdrs,Bait.Gene.Name)
 
 # Commented out the combined edges... that shit was too big
 
@@ -278,7 +278,7 @@ for (mybait in baits) {
   
   #Left_joining table with prey 1 and adding Uniprot and Nice Prey name columns
   prey.prey.join <- left_join(prey.prey.inter, bait.data.filter.comp, by=c("Prey.1.Entrez.ID" = "Prey.GeneID"))%>%
-    select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Prey.Uniprot, Prey.Gene.Name, WD,perm_fdrs) %>%
+    select(Prey.1.Entrez.ID, Prey.2.Entrez.ID, Canonical.First.Prey.Uniprot, Prey.Gene.Name, WD) %>%
     rename(c(Canonical.First.Prey.Uniprot = "Prey.1.Uniprot", Prey.Gene.Name = "Prey.1.Gene.Name", WD = "WD.1"))
   
   #Left_joining table with prey 2 and adding Uniprot and Nice Prey name columns
@@ -307,14 +307,17 @@ for (mybait in baits) {
     
     print(bait)######
     
-    dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''))
+    dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''),na="",row.names=F)
     nodes_combined %>%
       filter(Bait.Gene.Name == bait) %>%
-      write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes.csv",sep=''))
+      write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes.csv",sep=''),na="",row.names=F)
     nodes_combined_filtered %>%
       filter(Bait.Gene.Name == bait) %>%
-      write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes_filtered.csv",sep=''))
+      write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes_filtered.csv",sep=''),na="",row.names=F)
+    
     edges_bait = edges_combined %>%
+      filter(Bait.Gene.Name == bait)
+    edges_bait_filtered = edges_combined_filtered %>%
       filter(Bait.Gene.Name == bait)
     
     # Merge the prey-prey information with the nodes
@@ -336,17 +339,23 @@ for (mybait in baits) {
       prey.prey.select$Experiment.ID = '-'
     }
     # Put Experiment ID at the start of the dataframe
-    prey.prey.select = prey.prey.select[, c(13,1:12)]
+    prey.prey.select = prey.prey.select[, c(13,1:10,12,11)]
+    edges_bait = edges_bait[, c(1:9,11,12,10)]
+    edges_bait_filtered = edges_bait_filtered[, c(1:9,11,12,10)]
     
     # Rename the columns for compatibility...
     colnames(prey.prey.select) = colnames(edges_bait)
     
     # Combine and add the WD2 column
     total_edges = bind_rows(edges_bait,prey.prey.select)
+    total_edges_filtered = bind_rows(edges_bait_filtered,prey.prey.select)
     colnames(total_edges)[[13]] = "WD2"
+    colnames(total_edges_filtered)[[13]] = "WD2"
     
     
-    write.csv(total_edges, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges.csv",sep=''))
+    
+    write.csv(total_edges, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges.csv",sep=''),na="",row.names=F)
+    write.csv(total_edges_filtered, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges_filtered.csv",sep=''),na="",row.names=F)
   }
 }
 
