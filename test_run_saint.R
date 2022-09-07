@@ -222,8 +222,8 @@ data.filter.comp <- arrange(data.filter, desc(WD))
 data.testbaits.comp = arrange(data.testbaits, desc(WD))
 
 # Write these output files
-write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep='',na="",row.names=F))
-write.csv(data.testbaits.comp, paste(output_dir,"/Annotated_Merge_Saint.csv",sep='',na="",row.names=F))
+write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep=''),na="",row.names=F)
+write.csv(data.testbaits.comp, paste(output_dir,"/Annotated_Merge_Saint.csv",sep=''),na="",row.names=F)
 
 # Prey-Prey
 #Create separate data tables for prey-prey interactions
@@ -307,7 +307,7 @@ for (mybait in baits) {
     
     print(bait)######
     
-    dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''),na="",row.names=F)
+    dir.create(paste(output_dir,"/Cytoscape_Outputs/",bait,sep=''))
     nodes_combined %>%
       filter(Bait.Gene.Name == bait) %>%
       write.csv(paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_nodes.csv",sep=''),na="",row.names=F)

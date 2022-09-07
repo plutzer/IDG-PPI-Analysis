@@ -24,5 +24,6 @@ filter_interaction = function(pathname) {
     subset(select = -c(sum_int))
   
   write.table(interaction_filtered,file = paste0(str_split(pathname)[[1]][1],"_filtered.txt"),quote = F,sep="\t",row.names = F,col.names = F)
+  paste0(str_split(pathname)[[1]][1],"_filtered.txt")
 }
 
