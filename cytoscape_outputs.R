@@ -1,5 +1,8 @@
 
-
+library(reticulate)
+library(cRomppass)
+library(tidyverse)
+library(dplyr)
 
 
 create_cytoscape_outputs = function (annotated,annotated_filtered,mv_biogrid_path,output_dir) {
@@ -112,12 +115,18 @@ create_cytoscape_outputs = function (annotated,annotated_filtered,mv_biogrid_pat
       
       edges_bait$X = NULL
       
-      if (length(edges_bait)>=1){
-        prey.prey.select$Experiment.ID = edges_bait$Experiment.ID[[1]] # These shouldn't change so just first is fine
+      # What if prey.prey.select has 0 rows?
+      if (nrow(prey.prey.select) >= 1){
+        if (length(edges_bait)>=1){
+          prey.prey.select$Experiment.ID = edges_bait$Experiment.ID[[1]] # These shouldn't change so just first is fine
+        }
+        else {
+          prey.prey.select$Experiment.ID = '-'
+        }
+      } else {
+        prey.prey.select = cbind(prey.prey.select,data.frame(Experiment.ID = character(),stringsAsFactors = F))
       }
-      else {
-        prey.prey.select$Experiment.ID = '-'
-      }
+      print(colnames(prey.prey.select))
       # Put Experiment ID at the start of the dataframe
       prey.prey.select = prey.prey.select[, c(13,1:10,12,11)]
       edges_bait = edges_bait[, c(1:9,11,12,10)]
@@ -138,5 +147,4 @@ create_cytoscape_outputs = function (annotated,annotated_filtered,mv_biogrid_pat
       write.csv(total_edges_filtered, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges_filtered.csv",sep=''),na="",row.names=F)
     }
   }
-  
 }

@@ -225,6 +225,10 @@ data.testbaits.comp = arrange(data.testbaits, desc(WD))
 write.csv(data.filter.comp, paste(output_dir,"/Annotated_Merge_Saint_filter.csv",sep=''),na="",row.names=F)
 write.csv(data.testbaits.comp, paste(output_dir,"/Annotated_Merge_Saint.csv",sep=''),na="",row.names=F)
 
+
+
+
+
 # Prey-Prey
 #Create separate data tables for prey-prey interactions
 

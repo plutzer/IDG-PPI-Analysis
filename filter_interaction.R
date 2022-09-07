@@ -9,7 +9,9 @@ filter_interaction = function(pathname) {
   
   interaction = read.delim(file = pathname,sep = '\t',header = F)
   
-  interaction_filtered = interaction %>% rename(
+  print(colnames(interaction))
+  
+  interaction_filtered = interaction %>% dplyr::rename(
     rep = V1,
     bait = V2,
     prey = V3,
@@ -23,7 +25,7 @@ filter_interaction = function(pathname) {
     filter(sum_int != 0) %>% 
     subset(select = -c(sum_int))
   
-  write.table(interaction_filtered,file = paste0(str_split(pathname)[[1]][1],"_filtered.txt"),quote = F,sep="\t",row.names = F,col.names = F)
-  paste0(str_split(pathname)[[1]][1],"_filtered.txt")
+  write.table(interaction_filtered,file = paste0(str_split(pathname,pattern = ".txt")[[1]][1],"_filtered.txt"),quote = F,sep="\t",row.names = F,col.names = F)
+  return(paste0(str_split(pathname,pattern = ".txt")[[1]][1],"_filtered.txt"))
 }
 

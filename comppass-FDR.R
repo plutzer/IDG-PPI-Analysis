@@ -1,6 +1,8 @@
 library(dplyr)
 library(cRomppass)
 library(magrittr)
+library(reticulate)
+library(tidyverse)
 
 
 normalize.wd <- function(xs, norm.factor) {
@@ -77,7 +79,7 @@ resample_AvePSM = function(to_comp,comp_out,n.experiments,norm.factor = 0.98,suf
   comp_out = merge(comp_out,stats,by=c("Experiment.ID","Prey"))
   
   # return the comp_out input with new columns
-  comp_out
+  return(comp_out)
 }
 
 
@@ -115,6 +117,6 @@ run_comppass = function (to_comp_filename,n_iter = 100) {
   write.table(comp_out, file=paste(output_dir,'/compPASS.csv',sep=''), sep = "\t")
   
   # Return the output
-  comp_out
+  return(comp_out)
 }
 

@@ -1,17 +1,21 @@
 
 library(org.Hs.eg.db)
+library(reticulate)
+library(cRomppass)
+library(tidyverse)
+library(DarkKinaseTools)
+library(dplyr)
 
-
-merge = function(SAINT_list_path,comp_out) {
+merge_scores = function(SAINT_list_path,comp_out,output_dir) {
   # Read in output list from SAINT
   saint <- read.csv(file=SAINT_list_path, sep="\t")
-  
+
   # Merge with comppass output
   merge = left_join(as.data.frame.matrix(comp_out), saint, by = c("Experiment.ID" = "Bait", "Prey"))
   
   # Write output and return the dataframe
   write_csv(merge, paste(output_dir,'/Merge_CompPASS_SAINT.csv',sep=''))
-  merge
+  return(merge)
 }
 
 annotate_uniprot_go = function(merge,uniprot_map_path) {
@@ -101,7 +105,7 @@ annotate_uniprot_go = function(merge,uniprot_map_path) {
   
   data <- left_join(data, baitTable, by="Bait")
   
-  data
+  return(data)
 }
 
 

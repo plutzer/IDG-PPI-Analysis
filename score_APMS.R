@@ -13,6 +13,7 @@ source("compute_wds.R")
 source("filter_interaction.R")
 source("comppass-FDR.R")
 source("cytoscape_outputs.R")
+source("merge_annotate_filter.R")
 
 
 
@@ -45,6 +46,10 @@ if (quantification_method == "spc") {
 } else if (quantification_method == "int") {
   SAINT_path = paste0(repo_path,"/build/SAINTexpress-int.exe")
 } else {print("Invalid argument: quantification_method")}
+
+# This is for some reason necessary
+select <- get(x="select", pos = "package:dplyr")
+
 ################################################################################
 
 ########### Generate SAINT inputs ##############################################
@@ -78,7 +83,7 @@ comp_out = run_comppass(to_comp_filename,n_iter = resampling_iterations)
 ################################################################################
 
 # Merge the compass and SAINT outputs
-merged = merge(paste(output_dir,'/list.txt',sep=''),comp_out,output_dir)
+merged = merge_scores(paste(output_dir,'/list.txt',sep=''),comp_out,output_dir)
 
 # Annotated the merged data with Uniprot and GO info
 annotated = annotate_uniprot_go(merged,uniprot_map_path)
@@ -109,7 +114,7 @@ annotated <- arrange(annotated, desc(WD))
 write.csv(annotated, paste(output_dir,"/Annotated_Merged_Output.csv",sep=''),na="",row.names=F)
 
 # Filter based on the cutoffs specified above.
-annotated_filtered = annotated %>% filter(data, BFDR <= BFDR_cutoff, AvgP >= AvgP_cutoff)
+annotated_filtered = annotated %>% filter(BFDR <= BFDR_cutoff, AvgP >= AvgP_cutoff)
 
 # Write filtered file
 write.csv(annotated_filtered, paste(output_dir,"/Annotated_Filtered_Merged_Output.csv",sep=''),na="",row.names=F)
@@ -117,6 +122,6 @@ write.csv(annotated_filtered, paste(output_dir,"/Annotated_Filtered_Merged_Outpu
 
 ###################### Cytoscape Outputs #######################################
 create_cytoscape_outputs(annotated,annotated_filtered,biogrid_mv_path,output_dir)
-
+################################################################################
 
 
