@@ -9,13 +9,11 @@ library(tidyverse)
 library(DarkKinaseTools)
 library(org.Hs.eg.db)
 library(dplyr)
-source("compute_wds.R")
+#source("compute_wds.R")
 source("filter_interaction.R")
 source("comppass-FDR.R")
 source("cytoscape_outputs.R")
 source("merge_annotate_filter.R")
-
-
 
 # Later change parameters section to use input arguments or shiny buttons
 ################# Parameters ###################################################
@@ -99,7 +97,13 @@ if (file.exists(paste0(output_dir,"/biogrid_summary.csv"))) {
 }
 
 # Merge the data with the biogrid summary file.
+summ_biogrid$Entrez.Gene.Interactor.A = as.character(summ_biogrid$Entrez.Gene.Interactor.A)
+summ_biogrid$Entrez.Gene.Interactor.B = as.character(summ_biogrid$Entrez.Gene.Interactor.B)
 annotated = left_join(annotated,summ_biogrid, by=c('Bait.GeneID'='Entrez.Gene.Interactor.A','Prey.GeneID'='Entrez.Gene.Interactor.B'))
+
+# Fix this column for ROC analysis
+annotated$in.BioGRID[is.na(annotated$in.BioGRID)] = FALSE
+annotated$Multivalidated[is.na(annotated$Multivalidated)] = FALSE
 
 #################### Filtering #################################################
 # Identify test baits for filtering
@@ -123,5 +127,7 @@ write.csv(annotated_filtered, paste(output_dir,"/Annotated_Filtered_Merged_Outpu
 ###################### Cytoscape Outputs #######################################
 create_cytoscape_outputs(annotated,annotated_filtered,biogrid_mv_path,output_dir)
 ################################################################################
+
+
 
 
