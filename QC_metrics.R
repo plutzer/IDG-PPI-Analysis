@@ -112,6 +112,9 @@ p
 dir.create(paste0(output_dir,"/Plots/GSEA"))
 
 for (bait in unique(annotated_merged$Bait.Gene.Name)) {
+  
+  bait = "CSNK1G1"
+  
   print(bait)
   interactors = annotated_merged %>% filter(Bait.Gene.Name == bait) %>%
     filter(!(is.na(Prey.Gene.Name) | Prey.Gene.Name == "")) # Remove preys that don't have a gene name
@@ -136,13 +139,13 @@ for (bait in unique(annotated_merged$Bait.Gene.Name)) {
   dot_fname_bp = paste0(output_dir,"/Plots/GSEA/",bait,"/GSEA_dot_BP.png")
   gsea_fname_bp = paste0(output_dir,"/Plots/GSEA/",bait,"/GSEA_BP.png")
   
-  png(dot_fname_bp)
+
   dotplot(gsea_bp, showCategory=10, split=".sign") + facet_grid(.~.sign)
-  dev.off()
+
   
-  png(gsea_fname_bp)
+
   gseaplot(gsea_bp, by = "all", title = gsea_bp$Description[1], geneSetID = 1)
-  dev.off()
+
   
   gsea_cc = gseGO(geneList=genelist, 
                   ont ="CC", 
@@ -160,13 +163,13 @@ for (bait in unique(annotated_merged$Bait.Gene.Name)) {
   gsea_fname_cc = paste0(output_dir,"/Plots/GSEA/",bait,"/GSEA_CC.png")
   
   
-  png(dot_fname_cc)
+
   dotplot(gsea_cc, showCategory=10, split=".sign") + facet_grid(.~.sign)
-  dev.off()
+
   
-  png(gsea_fname_cc)
+
   gseaplot(gsea_cc, by = "all", title = gsea_cc$Description[1], geneSetID = 1)
-  dev.off()
+
   
 }  
 

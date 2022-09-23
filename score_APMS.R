@@ -19,11 +19,11 @@ source("merge_annotate_filter.R")
 ################# Parameters ###################################################
 ED_path = 'C:/Users/plutzer/Work/IDG_pipeline/ED_DB.csv'
 PG_path = 'C:/Users/plutzer/Work/IDG_pipeline/proteinGroups.txt'
-output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int'
+output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_blank_2'
 
-resampling_iterations=100 #for perm_fdr calculation
+resampling_iterations=10 #for perm_fdr calculation
 
-quantification_method = "intensity"
+quantification_method = "spc"
 
 # Filtering parameters
 BFDR_cutoff = 0.05
@@ -71,7 +71,7 @@ bait_path = paste(output_dir,'/bait.txt',sep = '')
 filtered_interaction_path = filter_interaction(interaction_path)
 
 # Run SAINT with defaults
-system(paste(SAINT_path,filtered_interaction_path,prey_path,bait_path))
+system(paste(SAINT_path,"-L 2",filtered_interaction_path,prey_path,bait_path))
 ################################################################################
 
 ############# Run comppass and Perm FDR ########################################
