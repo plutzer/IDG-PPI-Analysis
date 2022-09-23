@@ -84,8 +84,7 @@ create_cytoscape_outputs = function (annotated,annotated_filtered,mv_biogrid_pat
     }
     
     # Check to see if its a contol bait
-    if (mybait %in% test_baits$Bait.ID) {
-      
+    if (!grepl( "IDG", mybait, fixed = TRUE)) { # This is sketchy and needs to be changed in case of a valid uniprot ID that contains "IDG"
       bait = filter(bait.data.filter,Bait == mybait)$Bait.Gene.Name[[1]]
       
       print(bait)######
@@ -129,6 +128,16 @@ create_cytoscape_outputs = function (annotated,annotated_filtered,mv_biogrid_pat
       print(colnames(prey.prey.select))
       # Put Experiment ID at the start of the dataframe
       prey.prey.select = prey.prey.select[, c(13,1:10,12,11)]
+      
+      # Add the perm_fdr_2 column
+      fdr2_info = annotated %>% 
+        filter(Bait == mybait) %>%
+        select(Prey.Gene.Name,perm_fdrs) %>%
+        rename(perm_fdrs = "perm_fdr_2",Prey.Gene.Name = "Prey.2.Gene.Name")
+      
+      # Merge into the prey-prey edges for the current bait
+      prey.prey.select = left_join(prey.prey.select,fdr2_info,by = "Prey.2.Gene.Name")
+      
       edges_bait = edges_bait[, c(1:9,11,12,10)]
       edges_bait_filtered = edges_bait_filtered[, c(1:9,11,12,10)]
       
@@ -140,7 +149,8 @@ create_cytoscape_outputs = function (annotated,annotated_filtered,mv_biogrid_pat
       total_edges_filtered = bind_rows(edges_bait_filtered,prey.prey.select)
       colnames(total_edges)[[13]] = "WD2"
       colnames(total_edges_filtered)[[13]] = "WD2"
-      
+      colnames(total_edges)[[14]] = "perm_fdr_2"
+      colnames(total_edges_filtered)[[14]] = "perm_fdr_2"
       
       
       write.csv(total_edges, paste(output_dir,"/Cytoscape_Outputs/",bait,"/",bait,"_edges.csv",sep=''),na="",row.names=F)

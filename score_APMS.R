@@ -19,11 +19,11 @@ source("merge_annotate_filter.R")
 ################# Parameters ###################################################
 ED_path = 'C:/Users/plutzer/Work/IDG_pipeline/ED_DB.csv'
 PG_path = 'C:/Users/plutzer/Work/IDG_pipeline/proteinGroups.txt'
-output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_blank_2'
+output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_int'
 
 resampling_iterations=100 #for perm_fdr calculation
 
-quantification_method = "spc"
+quantification_method = "intensity"
 
 # Filtering parameters
 BFDR_cutoff = 0.05
@@ -41,7 +41,7 @@ biogrid_all_path = paste0(repo_path,'/BIOGRID-ALL-4.4.211.tab3.txt')
 # Set the SAINT path based on the quantification method
 if (quantification_method == "spc") {
   SAINT_path = paste0(repo_path,"/build/SAINTexpress-spc.exe")
-} else if (quantification_method == "int") {
+} else if (quantification_method == "intensity") {
   SAINT_path = paste0(repo_path,"/build/SAINTexpress-int.exe")
 } else {print("Invalid argument: quantification_method")}
 
