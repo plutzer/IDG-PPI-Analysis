@@ -1,8 +1,6 @@
 
-repo_path = 'C:/Users/plutzer/Repos/IDG-PPI-Analysis_plutzer'
-
-setwd(repo_path)
-
+repo_path = getwd()
+print(file.exists("biogrid_summary.csv"))
 library(reticulate)
 library(cRomppass)
 library(tidyverse)
@@ -15,15 +13,19 @@ source("comppass-FDR.R")
 source("cytoscape_outputs.R")
 source("merge_annotate_filter.R")
 
-# Later change parameters section to use input arguments or shiny buttons
+################## ARGUMENTS ####################################################
+args = commandArgs(trailingOnly = TRUE)
+
+# Check arguments
+
 ################# Parameters ###################################################
-ED_path = 'C:/Users/plutzer/Work/IDG_pipeline/ED_DB.csv'
-PG_path = 'C:/Users/plutzer/Work/IDG_pipeline/proteinGroups.txt'
-output_dir = 'C:/Users/plutzer/Work/IDG_pipeline/outputs/testset_blank_2'
+ED_path = args[1]
+PG_path = args[2]
+output_dir = args[3] ## No slash at end!!!
 
-resampling_iterations=10 #for perm_fdr calculation
+resampling_iterations=as.integer(args[4]) #for perm_fdr calculation
 
-quantification_method = "spc"
+quantification_method = args[5]
 
 # Filtering parameters
 BFDR_cutoff = 0.05
@@ -32,8 +34,6 @@ Comppass_percent = 0.05 # Might not need?
 ################################################################################
 
 ############### Setting variables ##############################################
-setwd(output_dir)
-
 uniprot_map_path = paste0(repo_path,'/uniprot_mapping.tsv.zip')
 biogrid_mv_path = paste0(repo_path,'/BIOGRID-MV-Physical-4.4.211.tab3.txt')
 biogrid_all_path = paste0(repo_path,'/BIOGRID-ALL-4.4.211.tab3.txt')
@@ -87,9 +87,9 @@ merged = merge_scores(paste(output_dir,'/list.txt',sep=''),comp_out,output_dir)
 annotated = annotate_uniprot_go(merged,uniprot_map_path)
 
 # Check to see if a pre-processed biogrid file exists...
-if (file.exists(paste0(output_dir,"/biogrid_summary.csv"))) {
+if (file.exists("biogrid_summary.csv")) {
   print("Found pre-processed BioGRID summary.")
-  summ_biogrid = read.csv(file = paste0(output_dir,"/biogrid_summary.csv"))
+  summ_biogrid = read.csv(file = "biogrid_summary.csv")
 } else {
   print("No pre-processed BioGRID file found.")
   print("Processing BioGRID file. This may take several minutes.")
