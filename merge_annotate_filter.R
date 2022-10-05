@@ -118,12 +118,12 @@ preprocess_biogrid = function(biogrid_all_path, biogrid_mv_path,output_dir) {
     filter(Organism.ID.Interactor.A == 9606 & Organism.ID.Interactor.B == 9606)
   
   ## Need to mirror the biogrid files
-  biogrid_mirror = all_biogrid %>% filter(Entrez.Gene.Interactor.A != Entrez.Gene.Interactor.B) # don't include self interactions in mirror
+  biogrid_mirror = all_biogrid
   biogrid_mirror$Entrez.Gene.Interactor.A = all_biogrid$Entrez.Gene.Interactor.B
   biogrid_mirror$Entrez.Gene.Interactor.B = all_biogrid$Entrez.Gene.Interactor.A
   all_biogrid = rbind(all_biogrid,biogrid_mirror)
   
-  mv_mirror = mv_biogrid %>% filter(Entrez.Gene.Interactor.A != Entrez.Gene.Interactor.B)
+  mv_mirror = mv_biogrid
   mv_mirror$Entrez.Gene.Interactor.A = mv_biogrid$Entrez.Gene.Interactor.B
   mv_mirror$Entrez.Gene.Interactor.B = mv_biogrid$Entrez.Gene.Interactor.A
   mv_biogrid = rbind(mv_biogrid,mv_mirror)

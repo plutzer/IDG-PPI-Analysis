@@ -1,6 +1,6 @@
 
 repo_path = getwd()
-print(file.exists("biogrid_summary.csv"))
+
 library(reticulate)
 library(cRomppass)
 library(tidyverse)
@@ -71,7 +71,9 @@ bait_path = paste(output_dir,'/bait.txt',sep = '')
 filtered_interaction_path = filter_interaction(interaction_path)
 
 # Run SAINT with defaults
+setwd(output_dir)
 system(paste(SAINT_path,"-L 2",filtered_interaction_path,prey_path,bait_path))
+setwd(repo_path)
 ################################################################################
 
 ############# Run comppass and Perm FDR ########################################
