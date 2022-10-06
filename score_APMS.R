@@ -27,6 +27,8 @@ resampling_iterations=as.integer(args[4]) #for perm_fdr calculation
 
 quantification_method = args[5]
 
+python_command = args[6] #Either local to run python or docker to run python3
+
 # Filtering parameters
 BFDR_cutoff = 0.05
 AvgP_cutoff = 0.7
@@ -55,12 +57,12 @@ select <- get(x="select", pos = "package:dplyr")
 py_run_string("print(\"Python is Running.\")")
 
 # Re-using the exisiting code for this because this parser works well
-system(paste0("python ",repo_path,"/score_APMS_noSAINT.py", # Change filename
-             " --experimentalDesign ",ED_path,
-             " --proteinGroups " ,PG_path,
-             " --outputPath ",output_dir,
-             " --quantification-saint ",quantification_method,
-             " --quantification-comppass ",quantification_method))
+system(paste0(python_command," ",repo_path,"/score_APMS_noSAINT.py", # Change filename
+               " --experimentalDesign ",ED_path,
+               " --proteinGroups " ,PG_path,
+               " --outputPath ",output_dir,
+               " --quantification-saint ",quantification_method,
+               " --quantification-comppass ",quantification_method))
 
 # Set variables for new files generated
 interaction_path = paste(output_dir,'/interaction.txt',sep = '')

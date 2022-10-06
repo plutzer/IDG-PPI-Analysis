@@ -1,5 +1,0 @@
-#! /bin/sh
-gcc -Wall -c *.c *.h 
-gcc *.o -lgsl -lgslcblas -lm -o ../saint-spc-noctrl
-rm -rf *.o
-rm -rf *.gch
