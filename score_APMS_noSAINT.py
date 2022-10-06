@@ -7,7 +7,7 @@ from experimental_design import ExperimentalDesign
 from protein_groups import ProteinGroups
 #import tab_to_JSON
 
-SAINT_DIR = os.path.dirname(os.path.realpath(__file__)) + "\\build\\"
+SAINT_DIR = "/bin"
 SAINT_v2_INT_DIR = SAINT_DIR + "saint-int-ctrl"
 SAINT_v2_SPC_DIR = SAINT_DIR + "saint-spc-ctrl"
 SAINT_EXPRESS_INT_DIR = SAINT_DIR

@@ -27,7 +27,9 @@ resampling_iterations=as.integer(args[4]) #for perm_fdr calculation
 
 quantification_method = args[5]
 
-python_command = args[6] #Either local to run python or docker to run python3
+python_command = args[6] #python or python3
+
+SAINT_path = args[7]
 
 # Filtering parameters
 BFDR_cutoff = 0.05
@@ -41,12 +43,13 @@ biogrid_mv_path = paste0(repo_path,'/BIOGRID-MV-Physical-4.4.211.tab3.txt')
 biogrid_all_path = paste0(repo_path,'/BIOGRID-ALL-4.4.211.tab3.txt')
 
 # Set the SAINT path based on the quantification method
-if (quantification_method == "spc") {
-  SAINT_path = paste0(repo_path,"/build/SAINTexpress-spc.exe")
-} else if (quantification_method == "intensity") {
-  SAINT_path = paste0(repo_path,"/build/SAINTexpress-int.exe")
-} else {print("Invalid argument: quantification_method")}
-
+if (SAINT_path == "") {
+  if (quantification_method == "spc") {
+    SAINT_path = paste0(repo_path,"/build/SAINTexpress-spc.exe")
+  } else if (quantification_method == "intensity") {
+    SAINT_path = paste0(repo_path,"/build/SAINTexpress-int.exe")
+  } else {print("Invalid argument: quantification_method")}
+}
 # This is for some reason necessary
 select <- get(x="select", pos = "package:dplyr")
 
@@ -57,6 +60,7 @@ select <- get(x="select", pos = "package:dplyr")
 py_run_string("print(\"Python is Running.\")")
 
 # Re-using the exisiting code for this because this parser works well
+
 system(paste0(python_command," ",repo_path,"/score_APMS_noSAINT.py", # Change filename
                " --experimentalDesign ",ED_path,
                " --proteinGroups " ,PG_path,
@@ -74,7 +78,8 @@ filtered_interaction_path = filter_interaction(interaction_path)
 
 # Run SAINT with defaults
 setwd(output_dir)
-system(paste(SAINT_path,"-L 2",filtered_interaction_path,prey_path,bait_path))
+print(paste(SAINT_path,"-L 2",'interaction_filtered.txt','prey.txt','bait.txt'))
+system(paste(SAINT_path,"-L 2",'interaction_filtered.txt','prey.txt','bait.txt'))
 setwd(repo_path)
 ################################################################################
 

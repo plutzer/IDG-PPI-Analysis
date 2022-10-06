@@ -47,10 +47,10 @@ annotate_uniprot_go = function(merge,uniprot_map_path) {
   data <- left_join(data, uniprot.mapping, by=c("Canonical.First.Bait.Uniprot" = "UniProt"))
   
   #Move and rename columns
-  data <- data[c(1:7, 32:39, 8:31)]
+  data <- data[c(1:7, 32:40, 8:31)]
   data <- dplyr::rename(data, c("Prey.Gene.Name" = "Gene_Name.x", "Prey.Gene.Synonym" = "Gene_Synonym.x", "Prey.GeneID" = "GeneID.x", "First.Prey.GeneID" = "First_GeneID.x" ,
                                 "Bait.Gene.Name" = "Gene_Name.y", "Bait.Gene.Synonym" = "Gene_Synonym.y", "Bait.GeneID" = "GeneID.y", "First.Bait.GeneID" = "First_GeneID.y"))
-  data <- data[,c(1,12,13,2:4,14,15,8,9,5:7,10,11,16:39)]
+  data <- data[,c(1,12,13,2:4,14,15,8,9,5:7,10,11,16:40)]
   
   ################################################################################
   
